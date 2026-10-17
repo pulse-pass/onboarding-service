@@ -14,7 +14,7 @@ public final class MockServerHandlers {
     public static final String TOKEN_PATH = "/realms/pulse-pass/protocol/openid-connect/token";
     public static final String USERS_PATH = "/admin/realms/pulse-pass/users";
     public static final String ROLE_PATH = "/admin/realms/pulse-pass/roles/organizer";
-    public static final String ORGANIZATIONS_PATH = "/internal/organizations";
+    public static final String ORGANIZATIONS_PATH = "/organization/internal/organizations";
 
     public static final String DEFAULT_USER_ID = "00000000-0000-4000-8000-000000000001";
     private static final String ROLE_ID = "00000000-0000-4000-8000-000000000002";

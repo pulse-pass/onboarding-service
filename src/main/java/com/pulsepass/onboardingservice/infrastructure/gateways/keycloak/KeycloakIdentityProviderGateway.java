@@ -1,6 +1,5 @@
 package com.pulsepass.onboardingservice.infrastructure.gateways.keycloak;
 
-import com.pulsepass.onboardingservice.common.HttpClientHandlers;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.IdentityProviderGateway;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateUserInputDTO;
@@ -11,7 +10,6 @@ import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.dtos.Key
 import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.dtos.KeycloakRoleResponse;
 import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.dtos.KeycloakTokenResponse;
 import java.net.URI;
-import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -43,33 +41,45 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
             @Value("${app.keycloak.realm}") String realm,
             @Value("${app.keycloak.client-id}") String clientId,
             @Value("${app.keycloak.client-secret}") String clientSecret,
-            @Value("${app.http.connect-timeout}") Duration connectTimeout,
-            @Value("${app.http.read-timeout}") Duration readTimeout
+            RestClient.Builder restClientBuilder
     ) {
-        this.restClient = RestClient.builder()
+        this.restClient = restClientBuilder
                 .baseUrl(url)
-                .requestFactory(HttpClientHandlers.requestFactory(connectTimeout, readTimeout))
                 .build();
         this.realm = realm;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
     }
 
-    private String fetchAccessToken() {
+    private String fetchAccessToken(String personKey) {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type", "client_credentials");
         form.add("client_id", this.clientId);
         form.add("client_secret", this.clientSecret);
 
-        KeycloakTokenResponse response = restClient.post()
-                .uri("/realms/{realm}/protocol/openid-connect/token", this.realm)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(form)
-                .retrieve()
-                .body(KeycloakTokenResponse.class);
+        KeycloakTokenResponse response;
+        try {
+            response = this.restClient.post()
+                    .uri("/realms/{realm}/protocol/openid-connect/token", this.realm)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .body(KeycloakTokenResponse.class);
+        } catch (RestClientException ex) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.fetchAccessToken - Token request failed {}",
+                    Map.of("person_key", personKey),
+                    ex
+            );
+            throw new UserCreationException();
+        }
 
         if (response == null || response.accessToken() == null) {
-            throw new IllegalStateException("Keycloak token response without access token");
+            logger.error(
+                    "KeycloakIdentityProviderGateway.fetchAccessToken - Token response without access token {}",
+                    Map.of("person_key", personKey)
+            );
+            throw new UserCreationException();
         }
 
         return response.accessToken();
@@ -112,7 +122,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                 List.of(new KeycloakCredentialRequest("password", input.password(), false))
         );
 
-        String accessToken = fetchAccessToken();
+        String accessToken = fetchAccessToken(input.personKey());
         List<KeycloakRoleMappingRequest> roles = input.roles().stream()
                 .map(role -> fetchRole(accessToken, role))
                 .toList();

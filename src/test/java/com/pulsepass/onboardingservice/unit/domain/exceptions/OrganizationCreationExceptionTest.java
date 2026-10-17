@@ -15,6 +15,6 @@ class OrganizationCreationExceptionTest {
         assertThat(exception).isInstanceOf(DomainException.class);
         assertThat(exception.getCode()).isEqualTo("ONB00007");
         assertThat(exception.getMessageKey()).isEqualTo("error.organization.creation");
-        assertThat(exception.getMessage()).isEqualTo("Failed to create organization");
+        assertThat(exception.getMessage()).isEqualTo("Organization could not be created in the organization service");
     }
 }

@@ -10,12 +10,15 @@ import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.Use
 import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.KeycloakIdentityProviderGateway;
 import com.pulsepass.onboardingservice.unit.infrastructure.gateways.StubHttpServer;
 import com.pulsepass.onboardingservice.unit.infrastructure.gateways.StubHttpServer.Response;
+import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -36,9 +39,15 @@ class KeycloakIdentityProviderGatewayTest {
     @BeforeEach
     void setUp() throws Exception {
         server = new StubHttpServer();
+        HttpClient httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(2))
+                .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofMillis(300));
         gateway = new KeycloakIdentityProviderGateway(
                 server.url(), REALM, "onboarding-service", "client-secret",
-                Duration.ofSeconds(2), Duration.ofMillis(300));
+                RestClient.builder().requestFactory(requestFactory));
     }
 
     @AfterEach
@@ -149,21 +158,21 @@ class KeycloakIdentityProviderGatewayTest {
     }
 
     @Test
-    void createUser_tokenWithoutAccessToken_throwsIllegalState() {
+    void createUser_tokenWithoutAccessToken_throwsUserCreationException() {
         server.on("POST", TOKEN_PATH, Response.of(200, "{}"));
 
         assertThatThrownBy(() -> gateway.createUser(input("John Doe", List.of(UserRoleInputDTO.ORGANIZER))))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(UserCreationException.class);
 
         assertThat(wasCalled("POST", USERS_PATH)).isFalse();
     }
 
     @Test
-    void createUser_tokenEndpointFails_throwsRestClientException() {
+    void createUser_tokenEndpointFails_throwsUserCreationException() {
         server.on("POST", TOKEN_PATH, Response.of(401, "{\"error\":\"unauthorized_client\"}"));
 
         assertThatThrownBy(() -> gateway.createUser(input("John Doe", List.of(UserRoleInputDTO.ORGANIZER))))
-                .isInstanceOf(RestClientException.class);
+                .isInstanceOf(UserCreationException.class);
 
         assertThat(wasCalled("POST", USERS_PATH)).isFalse();
     }
@@ -274,10 +283,10 @@ class KeycloakIdentityProviderGatewayTest {
     }
 
     @Test
-    void createUser_serverDown_throwsRestClientException() {
+    void createUser_serverDown_throwsUserCreationException() {
         server.close();
 
         assertThatThrownBy(() -> gateway.createUser(input("John Doe", List.of(UserRoleInputDTO.ORGANIZER))))
-                .isInstanceOf(RestClientException.class);
+                .isInstanceOf(UserCreationException.class);
     }
 }

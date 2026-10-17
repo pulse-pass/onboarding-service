@@ -8,15 +8,18 @@ import com.pulsepass.onboardingservice.domain.gateways.organization.dtos.CreateO
 import com.pulsepass.onboardingservice.infrastructure.gateways.organizationservice.OrganizationServiceOrganizationGateway;
 import com.pulsepass.onboardingservice.unit.infrastructure.gateways.StubHttpServer;
 import com.pulsepass.onboardingservice.unit.infrastructure.gateways.StubHttpServer.Response;
+import java.net.http.HttpClient;
 import java.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.web.client.RestClient;
 import tools.jackson.databind.json.JsonMapper;
 
 class OrganizationServiceOrganizationGatewayTest {
 
-    private static final String PATH = "/internal/organizations";
+    private static final String PATH = "/organization/internal/organizations";
     private static final String TOKEN = "internal-secret";
     private static final CreateOrganizationInputDTO INPUT =
             new CreateOrganizationInputDTO("legal-key", "12345678000195", "Acme Events");
@@ -28,8 +31,14 @@ class OrganizationServiceOrganizationGatewayTest {
     @BeforeEach
     void setUp() throws Exception {
         server = new StubHttpServer();
+        HttpClient httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(2))
+                .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofMillis(300));
         gateway = new OrganizationServiceOrganizationGateway(
-                server.url(), TOKEN, Duration.ofSeconds(2), Duration.ofMillis(300));
+                server.url(), TOKEN, RestClient.builder().requestFactory(requestFactory));
     }
 
     @AfterEach

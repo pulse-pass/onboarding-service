@@ -18,7 +18,7 @@ public class LegalPersonController {
         this.legalPersonService = legalPersonService;
     }
 
-    @PostMapping("/legal_persons")
+    @PostMapping("/onboarding/legal_persons")
     public ResponseEntity<CreateLegalPersonResponse> createLegalPerson(
             @Valid @RequestBody CreateLegalPersonSchema request
     ) {

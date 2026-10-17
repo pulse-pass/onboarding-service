@@ -3,7 +3,7 @@ package com.pulsepass.onboardingservice.domain.exceptions;
 public class OrganizationCreationException extends DomainException {
 
     public OrganizationCreationException() {
-        super("Failed to create organization");
+        super("Organization could not be created in the organization service");
     }
 
     @Override

@@ -15,6 +15,6 @@ class UserCreationExceptionTest {
         assertThat(exception).isInstanceOf(DomainException.class);
         assertThat(exception.getCode()).isEqualTo("ONB00006");
         assertThat(exception.getMessageKey()).isEqualTo("error.user.creation");
-        assertThat(exception.getMessage()).isEqualTo("Failed to create user");
+        assertThat(exception.getMessage()).isEqualTo("User could not be created in the identity provider");
     }
 }

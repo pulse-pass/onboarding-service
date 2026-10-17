@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import com.pulsepass.onboardingservice.api.exceptions.ErrorResponse;
-import com.pulsepass.onboardingservice.api.exceptions.FieldErrorResponse;
+import com.pulsepass.onboardingservice.api.exceptions.ExtraFieldErrorResponse;
 import com.pulsepass.onboardingservice.api.exceptions.GlobalExceptionHandler;
 import com.pulsepass.onboardingservice.domain.exceptions.DomainException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidCollaboratorRoleException;
@@ -123,21 +123,21 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleDomain_userCreation_returns500WithOnb00006() {
+    void handleDomain_userCreation_returns422WithOnb00006() {
         var response = handler.handleDomain(new UserCreationException());
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(response.getBody())
-                .isEqualTo(new ErrorResponse("Internal Server Error", "user failed", "ONB00006", List.of()));
+                .isEqualTo(new ErrorResponse("Unprocessable Content", "user failed", "ONB00006", List.of()));
     }
 
     @Test
-    void handleDomain_organizationCreation_returns500WithOnb00007() {
+    void handleDomain_organizationCreation_returns422WithOnb00007() {
         var response = handler.handleDomain(new OrganizationCreationException());
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(response.getBody())
-                .isEqualTo(new ErrorResponse("Internal Server Error", "organization failed", "ONB00007", List.of()));
+                .isEqualTo(new ErrorResponse("Unprocessable Content", "organization failed", "ONB00007", List.of()));
     }
 
     @Test
@@ -176,7 +176,7 @@ class GlobalExceptionHandlerTest {
                 "Bad Request",
                 "bad request",
                 "GEN00400",
-                List.of(new FieldErrorResponse("phone_number.area_code", "INVALID_FORMAT"))
+                List.of(new ExtraFieldErrorResponse("phone_number.area_code", "INVALID_FORMAT"))
         ));
     }
 
@@ -194,7 +194,7 @@ class GlobalExceptionHandlerTest {
                 "Bad Request",
                 "bad request",
                 "GEN00400",
-                List.of(new FieldErrorResponse("body", "INVALID_FORMAT"))
+                List.of(new ExtraFieldErrorResponse("body", "INVALID_FORMAT"))
         ));
     }
 
@@ -209,7 +209,7 @@ class GlobalExceptionHandlerTest {
                 "Bad Request",
                 "bad request",
                 "GEN00400",
-                List.of(new FieldErrorResponse("body", "INVALID_FORMAT"))
+                List.of(new ExtraFieldErrorResponse("body", "INVALID_FORMAT"))
         ));
     }
 

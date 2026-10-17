@@ -6,6 +6,8 @@ import com.pulsepass.onboardingservice.domain.exceptions.InvalidLegalPersonDocum
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidNaturalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
+import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
+import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -32,7 +34,9 @@ public class GlobalExceptionHandler {
             NaturalPersonAlreadyExistsException.class, HttpStatus.CONFLICT,
             InvalidLegalPersonDocumentException.class, HttpStatus.BAD_REQUEST,
             InvalidNaturalPersonDocumentException.class, HttpStatus.BAD_REQUEST,
-            InvalidCollaboratorRoleException.class, HttpStatus.BAD_REQUEST
+            InvalidCollaboratorRoleException.class, HttpStatus.BAD_REQUEST,
+            UserCreationException.class, HttpStatus.UNPROCESSABLE_CONTENT,
+            OrganizationCreationException.class, HttpStatus.UNPROCESSABLE_CONTENT
     );
 
     private final MessageSource messageSource;
@@ -45,7 +49,7 @@ public class GlobalExceptionHandler {
             HttpStatus status,
             String messageKey,
             String code,
-            List<FieldErrorResponse> extraFields
+            List<ExtraFieldErrorResponse> extraFields
     ) {
         String message = messageSource.getMessage(messageKey, null, LocaleContextHolder.getLocale());
         return ResponseEntity
@@ -65,11 +69,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleInvalidRequest(MethodArgumentNotValidException ex) {
-        List<FieldErrorResponse> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
-                .map(FieldErrorResponse::fromFieldError)
+        List<ExtraFieldErrorResponse> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+                .map(ExtraFieldErrorResponse::fromFieldError)
                 .toList();
-        List<FieldErrorResponse> extraFields = fieldErrors.isEmpty()
-                ? List.of(new FieldErrorResponse("body", "INVALID_FORMAT"))
+        List<ExtraFieldErrorResponse> extraFields = fieldErrors.isEmpty()
+                ? List.of(new ExtraFieldErrorResponse("body", "INVALID_FORMAT"))
                 : fieldErrors;
         logger.warn(
                 "GlobalExceptionHandler.handleInvalidRequest - Invalid request fields {}",
@@ -80,7 +84,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadableRequest(HttpMessageNotReadableException ex) {
-        List<FieldErrorResponse> extraFields = List.of(new FieldErrorResponse("body", "INVALID_FORMAT"));
+        List<ExtraFieldErrorResponse> extraFields = List.of(new ExtraFieldErrorResponse("body", "INVALID_FORMAT"));
         logger.warn(
                 "GlobalExceptionHandler.handleUnreadableRequest - Request body could not be read {}",
                 Map.of("extra_fields", extraFields)

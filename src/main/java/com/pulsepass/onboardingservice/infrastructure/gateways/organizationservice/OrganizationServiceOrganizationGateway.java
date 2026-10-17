@@ -1,13 +1,11 @@
 package com.pulsepass.onboardingservice.infrastructure.gateways.organizationservice;
 
-import com.pulsepass.onboardingservice.common.HttpClientHandlers;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
 import com.pulsepass.onboardingservice.domain.gateways.organization.OrganizationGateway;
 import com.pulsepass.onboardingservice.domain.gateways.organization.dtos.CreateOrganizationInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.organization.dtos.CreateOrganizationOutputDTO;
 import com.pulsepass.onboardingservice.infrastructure.gateways.organizationservice.dtos.OrganizationServiceCreateOrganizationRequest;
 import com.pulsepass.onboardingservice.infrastructure.gateways.organizationservice.dtos.OrganizationServiceCreateOrganizationResponse;
-import java.time.Duration;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,12 +28,10 @@ public class OrganizationServiceOrganizationGateway implements OrganizationGatew
     public OrganizationServiceOrganizationGateway(
             @Value("${app.organization-service.url}") String url,
             @Value("${app.internal-token}") String internalToken,
-            @Value("${app.http.connect-timeout}") Duration connectTimeout,
-            @Value("${app.http.read-timeout}") Duration readTimeout
+            RestClient.Builder restClientBuilder
     ) {
-        this.restClient = RestClient.builder()
+        this.restClient = restClientBuilder
                 .baseUrl(url)
-                .requestFactory(HttpClientHandlers.requestFactory(connectTimeout, readTimeout))
                 .build();
         this.internalToken = internalToken;
     }
@@ -56,7 +52,7 @@ public class OrganizationServiceOrganizationGateway implements OrganizationGatew
         ResponseEntity<OrganizationServiceCreateOrganizationResponse> response;
         try {
             response = restClient.post()
-                    .uri("/internal/organizations")
+                    .uri("/organization/internal/organizations")
                     .header("internal-token", this.internalToken)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
