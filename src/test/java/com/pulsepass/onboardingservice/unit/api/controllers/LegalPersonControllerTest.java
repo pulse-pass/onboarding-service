@@ -44,7 +44,7 @@ import org.springframework.test.web.servlet.MockMvc;
 })
 class LegalPersonControllerTest {
 
-    private static final String URL = "/legal_persons";
+    private static final String URL = "/onboarding/legal_persons";
     private static final String VALID_BODY = body("12345678000195", "OWNER", "52998224725", "Secret123");
 
     @Autowired
@@ -151,12 +151,12 @@ class LegalPersonControllerTest {
     }
 
     @Test
-    void createLegalPerson_serviceThrowsUserCreation_returns500() throws Exception {
+    void createLegalPerson_serviceThrowsUserCreation_returns422() throws Exception {
         when(legalPersonService.createLegalPerson(any(CreateLegalPersonDTO.class)))
                 .thenThrow(new UserCreationException());
 
         mockMvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.code").value("ONB00006"));
     }
 

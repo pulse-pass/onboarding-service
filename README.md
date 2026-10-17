@@ -17,7 +17,7 @@ A API fica em `http://localhost:8081` (`API_PORT`), o MySQL em `localhost:3307` 
 
 ## Rotas
 
-`POST /legal_persons` (pública) faz o autocadastro da empresa organizadora. Grava a pessoa jurídica, o dono da conta (pessoa física) e o vínculo `OWNER`, cria o usuário do dono no Keycloak (usuário = CPF) com o papel `organizer` e pede ao `organization-service` a organização `PENDING`.
+`POST /onboarding/legal_persons` (pública) faz o autocadastro da empresa organizadora. Grava a pessoa jurídica, o dono da conta (pessoa física) e o vínculo `OWNER`, cria o usuário do dono no Keycloak (usuário = CPF) com o papel `organizer` e pede ao `organization-service` a organização `PENDING`.
 
 ```json
 {
@@ -37,7 +37,7 @@ A API fica em `http://localhost:8081` (`API_PORT`), o MySQL em `localhost:3307` 
 }
 ```
 
-Os documentos vão só com dígitos, a lista de colaboradores tem exatamente um item e o papel deve ser `OWNER`. A resposta `201` traz apenas a pessoa jurídica (`person_key`, `document_number`, `name`, `email`), sem o dono nem o telefone. Se o Keycloak ou o `organization-service` falharem depois da gravação, a resposta é 500 e o erro vai para o log; o cadastro gravado não é desfeito, e repetir o mesmo CNPJ devolve `ONB00001`.
+Os documentos vão só com dígitos, a lista de colaboradores tem exatamente um item e o papel deve ser `OWNER`. A resposta `201` traz apenas a pessoa jurídica (`person_key`, `document_number`, `name`, `email`), sem o dono nem o telefone. Se o Keycloak ou o `organization-service` falharem depois da gravação, a resposta é 422 (`ONB00006` ou `ONB00007`, com a mensagem para tentar novamente) e o erro vai para o log; o cadastro gravado não é desfeito, e repetir o mesmo CNPJ devolve `ONB00001`.
 
 Erros, no formato `{ "title", "message", "code" }` (mensagem em inglês ou português, conforme `Accept-Language`):
 
@@ -53,8 +53,8 @@ Erros, no formato `{ "title", "message", "code" }` (mensagem em inglês ou portu
 | `ONB00003` | 400 | Dígitos verificadores do CNPJ inválidos |
 | `ONB00004` | 400 | Dígitos verificadores do CPF inválidos |
 | `ONB00005` | 400 | Papel do colaborador diferente de `OWNER` |
-| `ONB00006` | 500 | Falha ao criar o usuário no Keycloak |
-| `ONB00007` | 500 | Falha ao criar a organização no `organization-service` |
+| `ONB00006` | 422 | Falha ao criar o usuário no Keycloak |
+| `ONB00007` | 422 | Falha ao criar a organização no `organization-service` |
 
 A saúde do serviço fica em `/actuator/health`.
 

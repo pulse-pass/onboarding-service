@@ -18,7 +18,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
-    private static final String POST_LEGAL_PERSONS = "/legal_persons";
+    private static final String POST_LEGAL_PERSONS = "/onboarding/legal_persons";
     private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
     private static final String NAME = "Lenha Produções Artísticas Ltda";
 
@@ -511,7 +511,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     }
 
     @Test
-    void createLegalPerson_identityProviderFailure_returnsInternalServerErrorAndKeepsRegistration() {
+    void createLegalPerson_identityProviderFailure_returnsUnprocessableContentAndKeepsRegistration() {
         String cnpj = DocumentGenerators.generateCnpj();
         String cpf = DocumentGenerators.generateCpf();
         MockServerHandlers.expectUserCreationFailure(cpf);
@@ -521,7 +521,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
         Response response = post(payload(cnpj, cpf));
 
-        assertError(response, 500, "ONB00006");
+        assertError(response, 422, "ONB00006");
         assertThat(MockServerHandlers.retrieveRequests("POST", MockServerHandlers.ORGANIZATIONS_PATH, cnpj)).isEmpty();
         // The failed user creation returns no Location, so role-mapping calls cannot be matched by CPF;
         // the count of calls to the default user path must not change.
@@ -532,14 +532,14 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     }
 
     @Test
-    void createLegalPerson_organizationServiceFailure_returnsInternalServerErrorAndKeepsRegistration() {
+    void createLegalPerson_organizationServiceFailure_returnsUnprocessableContentAndKeepsRegistration() {
         String cnpj = DocumentGenerators.generateCnpj();
         String cpf = DocumentGenerators.generateCpf();
         MockServerHandlers.expectOrganizationCreationFailure(cnpj);
 
         Response response = post(payload(cnpj, cpf));
 
-        assertError(response, 500, "ONB00007");
+        assertError(response, 422, "ONB00007");
         assertError(post(payload(cnpj, cpf)), 409, "ONB00001");
     }
 }

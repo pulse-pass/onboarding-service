@@ -3,7 +3,7 @@ package com.pulsepass.onboardingservice.domain.exceptions;
 public class UserCreationException extends DomainException {
 
     public UserCreationException() {
-        super("Failed to create user");
+        super("User could not be created in the identity provider");
     }
 
     @Override
