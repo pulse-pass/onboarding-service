@@ -8,7 +8,7 @@ import com.pulsepass.onboardingservice.common.MockServerHandlers;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,117 +19,54 @@ import tools.jackson.databind.json.JsonMapper;
 class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     private static final String POST_LEGAL_PERSONS = "/onboarding/legal_persons";
-    private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
-    private static final String NAME = "Lenha Produções Artísticas Ltda";
 
-    private static Map<String, Object> phoneNumber() {
+    private final JsonMapper mapper = JsonMapper.builder().build();
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void createLegalPerson_validPayload_returnsCreatedAndCallsDependencies() {
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
-        return phoneNumber;
-    }
-
-    private static Map<String, Object> collaborator(String cpf) {
+        String cpf = DocumentGenerators.generateCpf();
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
         collaborator.put("document_number", cpf);
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
-        return collaborator;
-    }
-
-    private static Map<String, Object> payload(String cnpj, String cpf) {
+        String cnpj = DocumentGenerators.generateCnpj();
         Map<String, Object> payload = new HashMap<>();
         payload.put("document_number", cnpj);
-        payload.put("name", NAME);
+        payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber());
-        payload.put("legal_person_collaborators", new java.util.ArrayList<>(List.of(collaborator(cpf))));
-        return payload;
-    }
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-    private static Map<String, Object> validPayload() {
-        return payload(DocumentGenerators.generateCnpj(), DocumentGenerators.generateCpf());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> firstCollaborator(Map<String, Object> payload) {
-        return ((List<Map<String, Object>>) payload.get("legal_person_collaborators")).get(0);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> phoneNumberOf(Map<String, Object> payload) {
-        return (Map<String, Object>) payload.get("phone_number");
-    }
-
-    private static Response post(Object payload, String language) {
-        return given()
-                    .header("Accept-Language", language)
+        String userId = UUID.randomUUID().toString();
+        MockServerHandlers.expectUserCreated(cpf, userId);
+        Response response = given()
+                    .header("Accept-Language", "en")
                     .contentType(ContentType.JSON)
                     .body(payload)
                 .when()
                     .post(POST_LEGAL_PERSONS)
                 .then()
                     .extract().response();
-    }
-
-    private static Response post(Object payload) {
-        return post(payload, "en");
-    }
-
-    private static void assertError(Response response, int status, String code) {
-        assertThat(response.statusCode()).isEqualTo(status);
-        assertThat(response.jsonPath().getString("code")).isEqualTo(code);
-        assertThat(response.jsonPath().getList("extra_fields")).isEmpty();
-    }
-
-    private static void assertSchemaError(Response response, String field, String... errors) {
-        assertThat(response.statusCode()).isEqualTo(400);
-        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
-        Map<?, ?>[] expected = Arrays.stream(errors)
-                .map(error -> Map.of("field", field, "error", error))
-                .toArray(Map<?, ?>[]::new);
-        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(expected);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static JsonPath bodyOf(Map<String, Object> recordedRequest) {
-        Map<String, Object> body = (Map<String, Object>) recordedRequest.get("body");
-        return new JsonPath(JSON_MAPPER.writeValueAsString(body.get("json")));
-    }
-
-    @SuppressWarnings("unchecked")
-    private static String headerOf(Map<String, Object> recordedRequest, String name) {
-        Map<String, List<String>> headers = (Map<String, List<String>>) recordedRequest.get("headers");
-        return headers.entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(name))
-                .map(entry -> entry.getValue().get(0))
-                .findFirst()
-                .orElse(null);
-    }
-
-    @Test
-    void createLegalPerson_validPayload_returnsCreatedAndCallsDependencies() {
-        String cnpj = DocumentGenerators.generateCnpj();
-        String cpf = DocumentGenerators.generateCpf();
-        String userId = UUID.randomUUID().toString();
-        MockServerHandlers.expectUserCreated(cpf, userId);
-
-        Response response = post(payload(cnpj, cpf));
 
         assertThat(response.statusCode()).isEqualTo(201);
         String personKey = response.jsonPath().getString("person_key");
         assertThat(UUID.fromString(personKey)).isNotNull();
         assertThat(response.jsonPath().getString("document_number")).isEqualTo(cnpj);
-        assertThat(response.jsonPath().getString("name")).isEqualTo(NAME);
+        assertThat(response.jsonPath().getString("name")).isEqualTo("Lenha Produções Artísticas Ltda");
         assertThat(response.jsonPath().getString("email")).isEqualTo("contato@lenha.com.br");
 
         List<Map<String, Object>> users = MockServerHandlers.retrieveRequests(
                 "POST", MockServerHandlers.USERS_PATH, cpf);
         assertThat(users).hasSize(1);
-        JsonPath user = bodyOf(users.get(0));
+        Map<String, Object> userRequestBody = (Map<String, Object>) users.get(0).get("body");
+        JsonPath user = new JsonPath(mapper.writeValueAsString(userRequestBody.get("json")));
         assertThat(user.getString("username")).isEqualTo(cpf);
         assertThat(user.getString("email")).isEqualTo("bianca@lenha.com.br");
         assertThat(user.getBoolean("enabled")).isTrue();
@@ -142,327 +79,1357 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         List<Map<String, Object>> organizations = MockServerHandlers.retrieveRequests(
                 "POST", MockServerHandlers.ORGANIZATIONS_PATH, cnpj);
         assertThat(organizations).hasSize(1);
-        JsonPath organization = bodyOf(organizations.get(0));
+        Map<String, Object> organizationRequestBody = (Map<String, Object>) organizations.get(0).get("body");
+        JsonPath organization = new JsonPath(mapper.writeValueAsString(organizationRequestBody.get("json")));
         assertThat(organization.getString("legal_person_key")).isEqualTo(personKey);
         assertThat(organization.getString("document_number")).isEqualTo(cnpj);
-        assertThat(organization.getString("name")).isEqualTo(NAME);
-        assertThat(headerOf(organizations.get(0), "internal-token")).isEqualTo(internalToken);
+        assertThat(organization.getString("name")).isEqualTo("Lenha Produções Artísticas Ltda");
+        Map<String, List<String>> organizationHeaders = (Map<String, List<String>>) organizations.get(0).get("headers");
+        String organizationInternalToken = organizationHeaders.entrySet().stream()
+                .filter(entry -> entry.getKey().equalsIgnoreCase("internal-token"))
+                .map(entry -> entry.getValue().get(0))
+                .findFirst()
+                .orElse(null);
+        assertThat(organizationInternalToken).isEqualTo(internalToken);
     }
 
     @Test
     void createLegalPerson_duplicatedCnpj_returnsConflictInPortuguese() {
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
         String cnpj = DocumentGenerators.generateCnpj();
-        assertThat(post(payload(cnpj, DocumentGenerators.generateCpf())).statusCode()).isEqualTo(201);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", cnpj);
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        Response response = post(payload(cnpj, DocumentGenerators.generateCpf()), "pt-BR");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+        assertThat(response.statusCode()).isEqualTo(201);
 
-        assertError(response, 409, "ONB00001");
-        assertThat(response.jsonPath().getString("message")).isEqualTo(
+        Map<String, Object> secondPhoneNumber = new HashMap<>();
+        secondPhoneNumber.put("country_code", "55");
+        secondPhoneNumber.put("area_code", "51");
+        secondPhoneNumber.put("number", "30224180");
+        Map<String, Object> secondCollaborator = new HashMap<>();
+        secondCollaborator.put("collaborator_role", "OWNER");
+        secondCollaborator.put("document_number", DocumentGenerators.generateCpf());
+        secondCollaborator.put("name", "Bianca Torres");
+        secondCollaborator.put("email", "bianca@lenha.com.br");
+        secondCollaborator.put("password", "12345678");
+        Map<String, Object> secondPayload = new HashMap<>();
+        secondPayload.put("document_number", cnpj);
+        secondPayload.put("name", "Lenha Produções Artísticas Ltda");
+        secondPayload.put("email", "contato@lenha.com.br");
+        secondPayload.put("phone_number", secondPhoneNumber);
+        secondPayload.put("legal_person_collaborators", new ArrayList<>(List.of(secondCollaborator)));
+
+        Response secondResponse = given()
+                    .header("Accept-Language", "pt-BR")
+                    .contentType(ContentType.JSON)
+                    .body(secondPayload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(secondResponse.statusCode()).isEqualTo(409);
+        assertThat(secondResponse.jsonPath().getString("code")).isEqualTo("ONB00001");
+        assertThat(secondResponse.jsonPath().getList("extra_fields")).isEmpty();
+        assertThat(secondResponse.jsonPath().getString("message")).isEqualTo(
                 "Este CNPJ já está cadastrado. Peça um convite à dona da conta ou entre com o seu CPF.");
     }
 
     @Test
     void createLegalPerson_duplicatedCpf_returnsConflict() {
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
         String cpf = DocumentGenerators.generateCpf();
-        assertThat(post(payload(DocumentGenerators.generateCnpj(), cpf)).statusCode()).isEqualTo(201);
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", cpf);
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        Response response = post(payload(DocumentGenerators.generateCnpj(), cpf));
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+        assertThat(response.statusCode()).isEqualTo(201);
 
-        assertError(response, 409, "ONB00002");
+        Map<String, Object> secondPhoneNumber = new HashMap<>();
+        secondPhoneNumber.put("country_code", "55");
+        secondPhoneNumber.put("area_code", "51");
+        secondPhoneNumber.put("number", "30224180");
+        Map<String, Object> secondCollaborator = new HashMap<>();
+        secondCollaborator.put("collaborator_role", "OWNER");
+        secondCollaborator.put("document_number", cpf);
+        secondCollaborator.put("name", "Bianca Torres");
+        secondCollaborator.put("email", "bianca@lenha.com.br");
+        secondCollaborator.put("password", "12345678");
+        Map<String, Object> secondPayload = new HashMap<>();
+        secondPayload.put("document_number", DocumentGenerators.generateCnpj());
+        secondPayload.put("name", "Lenha Produções Artísticas Ltda");
+        secondPayload.put("email", "contato@lenha.com.br");
+        secondPayload.put("phone_number", secondPhoneNumber);
+        secondPayload.put("legal_person_collaborators", new ArrayList<>(List.of(secondCollaborator)));
+
+        Response secondResponse = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(secondPayload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(secondResponse.statusCode()).isEqualTo(409);
+        assertThat(secondResponse.jsonPath().getString("code")).isEqualTo("ONB00002");
+        assertThat(secondResponse.jsonPath().getList("extra_fields")).isEmpty();
     }
 
     @Test
     void createLegalPerson_cnpjWithInvalidCheckDigit_returnsBadRequest() {
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
         String cnpj = DocumentGenerators.generateCnpj();
         char last = cnpj.charAt(13);
         String invalid = cnpj.substring(0, 13) + (last == '0' ? '1' : '0');
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", invalid);
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertError(post(payload(invalid, DocumentGenerators.generateCpf())), 400, "ONB00003");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("ONB00003");
+        assertThat(response.jsonPath().getList("extra_fields")).isEmpty();
     }
 
     @Test
     void createLegalPerson_cpfWithInvalidCheckDigit_returnsBadRequest() {
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
         String cpf = DocumentGenerators.generateCpf();
         char last = cpf.charAt(10);
         String invalid = cpf.substring(0, 10) + (last == '0' ? '1' : '0');
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", invalid);
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertError(post(payload(DocumentGenerators.generateCnpj(), invalid)), 400, "ONB00004");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("ONB00004");
+        assertThat(response.jsonPath().getList("extra_fields")).isEmpty();
     }
 
     @Test
     void createLegalPerson_memberRole_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        firstCollaborator(payload).put("collaborator_role", "MEMBER");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "MEMBER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertError(post(payload), 400, "ONB00005");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("ONB00005");
+        assertThat(response.jsonPath().getList("extra_fields")).isEmpty();
     }
 
     @Test
     void createLegalPerson_missingDocumentNumber_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        payload.remove("document_number");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "document_number", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "document_number", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_missingName_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        payload.remove("name");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "name", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "name", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_missingEmail_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        payload.remove("email");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "email", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "email", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_missingPhoneNumber_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        payload.remove("phone_number");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "phone_number", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "phone_number", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_missingCollaborators_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        payload.remove("legal_person_collaborators");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
 
-        assertSchemaError(post(payload), "legal_person_collaborators", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_cnpjWithThirteenDigits_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
         payload.put("document_number", DocumentGenerators.generateCnpj().substring(0, 13));
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "document_number", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "document_number", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_cpfWithTenDigits_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        firstCollaborator(payload).put("document_number", DocumentGenerators.generateCpf().substring(0, 10));
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf().substring(0, 10));
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "legal_person_collaborators[0].document_number", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators[0].document_number", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_countryCodeWithPlusSign_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        phoneNumberOf(payload).put("country_code", "+55");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "+55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "phone_number.country_code", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "phone_number.country_code", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_countryCodeWithFourDigits_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        phoneNumberOf(payload).put("country_code", "5511");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "5511");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "phone_number.country_code", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "phone_number.country_code", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_areaCodeWithThreeDigits_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        phoneNumberOf(payload).put("area_code", "511");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "511");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "phone_number.area_code", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "phone_number.area_code", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_numberWithSevenDigits_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        phoneNumberOf(payload).put("number", "3022418");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "3022418");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "phone_number.number", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "phone_number.number", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_numberWithTenDigits_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        phoneNumberOf(payload).put("number", "3022418012");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "3022418012");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "phone_number.number", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "phone_number.number", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_invalidEmail_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "not-an-email");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "email", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "email", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_invalidCollaboratorEmail_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        firstCollaborator(payload).put("email", "not-an-email");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "not-an-email");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "legal_person_collaborators[0].email", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators[0].email", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_passwordWithSevenCharacters_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        firstCollaborator(payload).put("password", "1234567");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "1234567");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "legal_person_collaborators[0].password", "SIZE");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators[0].password", "error", "SIZE"));
     }
 
     @Test
     void createLegalPerson_emptyCollaboratorList_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
         payload.put("legal_person_collaborators", List.of());
 
-        assertSchemaError(post(payload), "legal_person_collaborators", "SIZE");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators", "error", "SIZE"));
     }
 
     @Test
     void createLegalPerson_twoCollaborators_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        payload.put("legal_person_collaborators", List.of(
-                collaborator(DocumentGenerators.generateCpf()),
-                collaborator(DocumentGenerators.generateCpf())));
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> firstCollaborator = new HashMap<>();
+        firstCollaborator.put("collaborator_role", "OWNER");
+        firstCollaborator.put("document_number", DocumentGenerators.generateCpf());
+        firstCollaborator.put("name", "Bianca Torres");
+        firstCollaborator.put("email", "bianca@lenha.com.br");
+        firstCollaborator.put("password", "12345678");
+        Map<String, Object> secondCollaborator = new HashMap<>();
+        secondCollaborator.put("collaborator_role", "OWNER");
+        secondCollaborator.put("document_number", DocumentGenerators.generateCpf());
+        secondCollaborator.put("name", "Bianca Torres");
+        secondCollaborator.put("email", "bianca@lenha.com.br");
+        secondCollaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(firstCollaborator, secondCollaborator)));
 
-        assertSchemaError(post(payload), "legal_person_collaborators", "SIZE");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators", "error", "SIZE"));
     }
 
     @Test
     void createLegalPerson_missingCollaboratorCollaboratorRole_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        firstCollaborator(payload).remove("collaborator_role");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "legal_person_collaborators[0].collaborator_role", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators[0].collaborator_role", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_missingCollaboratorDocumentNumber_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        firstCollaborator(payload).remove("document_number");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "legal_person_collaborators[0].document_number", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators[0].document_number", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_missingCollaboratorName_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        firstCollaborator(payload).remove("name");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "legal_person_collaborators[0].name", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators[0].name", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_missingCollaboratorEmail_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        firstCollaborator(payload).remove("email");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "legal_person_collaborators[0].email", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators[0].email", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_missingCollaboratorPassword_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        firstCollaborator(payload).remove("password");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "legal_person_collaborators[0].password", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators[0].password", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_missingPhoneCountryCode_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        phoneNumberOf(payload).remove("country_code");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "phone_number.country_code", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "phone_number.country_code", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_missingPhoneAreaCode_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        phoneNumberOf(payload).remove("area_code");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "phone_number.area_code", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "phone_number.area_code", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_missingPhoneNumberDigits_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        phoneNumberOf(payload).remove("number");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "phone_number.number", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "phone_number.number", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_cnpjWithMask_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
         payload.put("document_number", "11.222.333/0001-81");
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "document_number", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "document_number", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_cpfWithMask_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        firstCollaborator(payload).put("document_number", "529.982.247-25");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", "529.982.247-25");
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "legal_person_collaborators[0].document_number", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators[0].document_number", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_cnpjWithLetters_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
         payload.put("document_number", "1122233300018A");
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "document_number", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "document_number", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_cpfWithLetters_returnsBadRequest() {
-        Map<String, Object> payload = validPayload();
-        firstCollaborator(payload).put("document_number", "5299822472A");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", "5299822472A");
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "legal_person_collaborators[0].document_number", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators[0].document_number", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_blankCollaboratorPassword_returnsRequiredAndSize() {
-        Map<String, Object> payload = validPayload();
-        firstCollaborator(payload).put("password", "   ");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "   ");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "legal_person_collaborators[0].password", "REQUIRED", "SIZE");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_collaborators[0].password", "error", "REQUIRED"),
+                Map.of("field", "legal_person_collaborators[0].password", "error", "SIZE"));
     }
 
     @Test
     void createLegalPerson_blankDocumentNumber_returnsRequiredAndInvalidFormat() {
-        Map<String, Object> payload = validPayload();
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
         payload.put("document_number", "");
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "document_number", "REQUIRED", "INVALID_FORMAT");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "document_number", "error", "REQUIRED"),
+                Map.of("field", "document_number", "error", "INVALID_FORMAT"));
     }
 
     @Test
     void createLegalPerson_blankName_returnsRequired() {
-        Map<String, Object> payload = validPayload();
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
         payload.put("name", "   ");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        assertSchemaError(post(payload), "name", "REQUIRED");
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "name", "error", "REQUIRED"));
     }
 
     @Test
     void createLegalPerson_schemaErrorInPortuguese_returnsPortugueseMessage() {
-        Map<String, Object> payload = validPayload();
-        payload.remove("name");
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        Response response = post(payload, "pt-BR");
+        Response response = given()
+                    .header("Accept-Language", "pt-BR")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
 
-        assertSchemaError(response, "name", "REQUIRED");
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "name", "error", "REQUIRED"));
         assertThat(response.jsonPath().getString("message")).isEqualTo(
                 "A requisição é inválida. Verifique as informações enviadas e tente novamente.");
     }
@@ -487,7 +1454,9 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     void createLegalPerson_getMethod_returnsMethodNotAllowed() {
         Response response = given().when().get(POST_LEGAL_PERSONS).then().extract().response();
 
-        assertError(response, 405, "GEN00405");
+        assertThat(response.statusCode()).isEqualTo(405);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00405");
+        assertThat(response.jsonPath().getList("extra_fields")).isEmpty();
     }
 
     @Test
@@ -500,46 +1469,158 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 .then()
                     .extract().response();
 
-        assertError(response, 415, "GEN00415");
+        assertThat(response.statusCode()).isEqualTo(415);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00415");
+        assertThat(response.jsonPath().getList("extra_fields")).isEmpty();
     }
 
     @Test
     void createLegalPerson_unknownRoute_returnsNotFound() {
         Response response = given().when().get("/rota_inexistente").then().extract().response();
 
-        assertError(response, 404, "GEN00404");
+        assertThat(response.statusCode()).isEqualTo(404);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00404");
+        assertThat(response.jsonPath().getList("extra_fields")).isEmpty();
     }
 
     @Test
     void createLegalPerson_identityProviderFailure_returnsUnprocessableContentAndKeepsRegistration() {
-        String cnpj = DocumentGenerators.generateCnpj();
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
         String cpf = DocumentGenerators.generateCpf();
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", cpf);
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        String cnpj = DocumentGenerators.generateCnpj();
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", cnpj);
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+
         MockServerHandlers.expectUserCreationFailure(cpf);
-        int roleMappingsBefore = MockServerHandlers.retrieveRequests("POST",
+        final int roleMappingsBefore = MockServerHandlers.retrieveRequests("POST",
                 MockServerHandlers.USERS_PATH + "/" + MockServerHandlers.DEFAULT_USER_ID + "/role-mappings/realm",
                 "organizer").size();
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
 
-        Response response = post(payload(cnpj, cpf));
-
-        assertError(response, 422, "ONB00006");
+        assertThat(response.statusCode()).isEqualTo(422);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("ONB00006");
+        assertThat(response.jsonPath().getList("extra_fields")).isEmpty();
         assertThat(MockServerHandlers.retrieveRequests("POST", MockServerHandlers.ORGANIZATIONS_PATH, cnpj)).isEmpty();
         // The failed user creation returns no Location, so role-mapping calls cannot be matched by CPF;
         // the count of calls to the default user path must not change.
         assertThat(MockServerHandlers.retrieveRequests("POST",
                 MockServerHandlers.USERS_PATH + "/" + MockServerHandlers.DEFAULT_USER_ID + "/role-mappings/realm",
                 "organizer")).hasSize(roleMappingsBefore);
-        assertError(post(payload(cnpj, cpf)), 409, "ONB00001");
+
+        Map<String, Object> secondPhoneNumber = new HashMap<>();
+        secondPhoneNumber.put("country_code", "55");
+        secondPhoneNumber.put("area_code", "51");
+        secondPhoneNumber.put("number", "30224180");
+        Map<String, Object> secondCollaborator = new HashMap<>();
+        secondCollaborator.put("collaborator_role", "OWNER");
+        secondCollaborator.put("document_number", cpf);
+        secondCollaborator.put("name", "Bianca Torres");
+        secondCollaborator.put("email", "bianca@lenha.com.br");
+        secondCollaborator.put("password", "12345678");
+        Map<String, Object> secondPayload = new HashMap<>();
+        secondPayload.put("document_number", cnpj);
+        secondPayload.put("name", "Lenha Produções Artísticas Ltda");
+        secondPayload.put("email", "contato@lenha.com.br");
+        secondPayload.put("phone_number", secondPhoneNumber);
+        secondPayload.put("legal_person_collaborators", new ArrayList<>(List.of(secondCollaborator)));
+
+        Response secondResponse = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(secondPayload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(secondResponse.statusCode()).isEqualTo(409);
+        assertThat(secondResponse.jsonPath().getString("code")).isEqualTo("ONB00001");
+        assertThat(secondResponse.jsonPath().getList("extra_fields")).isEmpty();
     }
 
     @Test
     void createLegalPerson_organizationServiceFailure_returnsUnprocessableContentAndKeepsRegistration() {
-        String cnpj = DocumentGenerators.generateCnpj();
+        Map<String, Object> phoneNumber = new HashMap<>();
+        phoneNumber.put("country_code", "55");
+        phoneNumber.put("area_code", "51");
+        phoneNumber.put("number", "30224180");
         String cpf = DocumentGenerators.generateCpf();
+        Map<String, Object> collaborator = new HashMap<>();
+        collaborator.put("collaborator_role", "OWNER");
+        collaborator.put("document_number", cpf);
+        collaborator.put("name", "Bianca Torres");
+        collaborator.put("email", "bianca@lenha.com.br");
+        collaborator.put("password", "12345678");
+        String cnpj = DocumentGenerators.generateCnpj();
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("document_number", cnpj);
+        payload.put("name", "Lenha Produções Artísticas Ltda");
+        payload.put("email", "contato@lenha.com.br");
+        payload.put("phone_number", phoneNumber);
+        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+
         MockServerHandlers.expectOrganizationCreationFailure(cnpj);
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
 
-        Response response = post(payload(cnpj, cpf));
+        assertThat(response.statusCode()).isEqualTo(422);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("ONB00007");
+        assertThat(response.jsonPath().getList("extra_fields")).isEmpty();
 
-        assertError(response, 422, "ONB00007");
-        assertError(post(payload(cnpj, cpf)), 409, "ONB00001");
+        Map<String, Object> secondPhoneNumber = new HashMap<>();
+        secondPhoneNumber.put("country_code", "55");
+        secondPhoneNumber.put("area_code", "51");
+        secondPhoneNumber.put("number", "30224180");
+        Map<String, Object> secondCollaborator = new HashMap<>();
+        secondCollaborator.put("collaborator_role", "OWNER");
+        secondCollaborator.put("document_number", cpf);
+        secondCollaborator.put("name", "Bianca Torres");
+        secondCollaborator.put("email", "bianca@lenha.com.br");
+        secondCollaborator.put("password", "12345678");
+        Map<String, Object> secondPayload = new HashMap<>();
+        secondPayload.put("document_number", cnpj);
+        secondPayload.put("name", "Lenha Produções Artísticas Ltda");
+        secondPayload.put("email", "contato@lenha.com.br");
+        secondPayload.put("phone_number", secondPhoneNumber);
+        secondPayload.put("legal_person_collaborators", new ArrayList<>(List.of(secondCollaborator)));
+
+        Response secondResponse = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(secondPayload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(secondResponse.statusCode()).isEqualTo(409);
+        assertThat(secondResponse.jsonPath().getString("code")).isEqualTo("ONB00001");
+        assertThat(secondResponse.jsonPath().getList("extra_fields")).isEmpty();
     }
 }
