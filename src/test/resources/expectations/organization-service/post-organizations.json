@@ -1,0 +1,16 @@
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/organization/internal/organizations"
+  },
+  "httpResponse": {
+    "statusCode": 201,
+    "headers": {
+      "Content-Type": ["application/json"]
+    },
+    "body": {
+      "organization_key": "e2f7b8a4-1c3d-4f6e-8a9b-0c1d2e3f4a5b",
+      "organization_status": "PENDING"
+    }
+  }
+}

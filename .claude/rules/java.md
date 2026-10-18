@@ -22,6 +22,11 @@ paths:
 - In services and controllers, public methods go: create, then update, then get.
 - Prefer separate, clear `if`s over compound `||` conditions when each case has its own meaning.
 
+## Code
+- No comments in code, configuration, scripts or Dockerfile (Javadoc included): names and structure must explain the code, and decisions go to the rules, the README or the task notes. The only exceptions are the version next to a workflow action pinned by SHA and generated or third-party files kept as they come (`mvnw`, `checkstyle.xml`).
+- No defensive validation (e.g. checking that a value from the environment is not empty); `try/catch` only around the call that actually throws.
+- Keep it simple: compare strings with `equals`, no `MessageDigest.isEqual` or similar tricks.
+
 ## Transactions and repositories
 - Explicit transaction control through the `UnitOfWork` (request-scoped `JpaUnitOfWork`), never `@Transactional`.
 - Reads go **before** `unitOfWork.begin()`, validations first (e.g. duplicate checks) and only then the lookups the writes need (e.g. the PENDING status); `begin()`/`commit()` wraps only the writes.

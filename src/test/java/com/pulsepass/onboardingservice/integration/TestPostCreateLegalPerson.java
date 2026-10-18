@@ -3,8 +3,9 @@ package com.pulsepass.onboardingservice.integration;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.pulsepass.onboardingservice.common.DocumentGenerators;
-import com.pulsepass.onboardingservice.common.MockServerHandlers;
+import com.pulsepass.onboardingservice.common.CnpjGenerator;
+import com.pulsepass.onboardingservice.common.CpfGenerator;
+import com.pulsepass.onboardingservice.common.MockTools;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
@@ -25,18 +26,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     @SuppressWarnings("unchecked")
     void createLegalPerson_validPayload_returnsCreatedAndCallsDependencies() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
-        String cpf = DocumentGenerators.generateCpf();
+        String cpf = CpfGenerator.generateCpf();
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
         collaborator.put("document_number", cpf);
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
-        String cnpj = DocumentGenerators.generateCnpj();
+        String cnpj = CnpjGenerator.generateCnpj();
         Map<String, Object> payload = new HashMap<>();
         payload.put("document_number", cnpj);
         payload.put("name", "Lenha Produções Artísticas Ltda");
@@ -45,7 +47,16 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
         String userId = UUID.randomUUID().toString();
-        MockServerHandlers.expectUserCreated(cpf, userId);
+        String roleId = UUID.randomUUID().toString();
+        String organizationKey = UUID.randomUUID().toString();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"),
+                Map.of("payload", Map.of("id", roleId)));
+        MockTools.addExpectation("keycloak/post-users", Map.of(), Map.of(
+                "headers", Map.of("Location", List.of("/admin/realms/pulse-pass/users/" + userId))));
+        MockTools.addExpectation("keycloak/post-role_mappings", Map.of("user_id", userId));
+        MockTools.addExpectation("organization-service/post-organizations", Map.of(),
+                Map.of("payload", Map.of("organization_key", organizationKey)));
         Response response = given()
                     .header("Accept-Language", "en")
                     .contentType(ContentType.JSON)
@@ -62,8 +73,8 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         assertThat(response.jsonPath().getString("name")).isEqualTo("Lenha Produções Artísticas Ltda");
         assertThat(response.jsonPath().getString("email")).isEqualTo("contato@lenha.com.br");
 
-        List<Map<String, Object>> users = MockServerHandlers.retrieveRequests(
-                "POST", MockServerHandlers.USERS_PATH, cpf);
+        List<Map<String, Object>> users = MockTools.retrieveRequests(
+                "POST", "/admin/realms/pulse-pass/users");
         assertThat(users).hasSize(1);
         Map<String, Object> userRequestBody = (Map<String, Object>) users.get(0).get("body");
         JsonPath user = new JsonPath(mapper.writeValueAsString(userRequestBody.get("json")));
@@ -72,12 +83,17 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         assertThat(user.getBoolean("enabled")).isTrue();
         assertThat(user.getString("attributes.person_key[0]")).isNotBlank().isNotEqualTo(personKey);
 
-        List<Map<String, Object>> roleMappings = MockServerHandlers.retrieveRequests(
-                "POST", MockServerHandlers.USERS_PATH + "/" + userId + "/role-mappings/realm", "organizer");
+        List<Map<String, Object>> roleMappings = MockTools.retrieveRequests(
+                "POST", "/admin/realms/pulse-pass/users/" + userId + "/role-mappings/realm");
         assertThat(roleMappings).hasSize(1);
+        Map<String, Object> roleMappingRequestBody = (Map<String, Object>) roleMappings.get(0).get("body");
+        JsonPath roleMapping = new JsonPath(mapper.writeValueAsString(roleMappingRequestBody.get("json")));
+        assertThat(roleMapping.getList("$")).hasSize(1);
+        assertThat(roleMapping.getString("[0].id")).isEqualTo(roleId);
+        assertThat(roleMapping.getString("[0].name")).isEqualTo("organizer");
 
-        List<Map<String, Object>> organizations = MockServerHandlers.retrieveRequests(
-                "POST", MockServerHandlers.ORGANIZATIONS_PATH, cnpj);
+        List<Map<String, Object>> organizations = MockTools.retrieveRequests(
+                "POST", "/organization/internal/organizations");
         assertThat(organizations).hasSize(1);
         Map<String, Object> organizationRequestBody = (Map<String, Object>) organizations.get(0).get("body");
         JsonPath organization = new JsonPath(mapper.writeValueAsString(organizationRequestBody.get("json")));
@@ -95,17 +111,18 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_duplicatedCnpj_returnsConflictInPortuguese() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
-        String cnpj = DocumentGenerators.generateCnpj();
+        String cnpj = CnpjGenerator.generateCnpj();
         Map<String, Object> payload = new HashMap<>();
         payload.put("document_number", cnpj);
         payload.put("name", "Lenha Produções Artísticas Ltda");
@@ -113,6 +130,17 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         payload.put("phone_number", phoneNumber);
         payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
+        String userId = UUID.randomUUID().toString();
+        String roleId = UUID.randomUUID().toString();
+        String organizationKey = UUID.randomUUID().toString();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"),
+                Map.of("payload", Map.of("id", roleId)));
+        MockTools.addExpectation("keycloak/post-users", Map.of(), Map.of(
+                "headers", Map.of("Location", List.of("/admin/realms/pulse-pass/users/" + userId))));
+        MockTools.addExpectation("keycloak/post-role_mappings", Map.of("user_id", userId));
+        MockTools.addExpectation("organization-service/post-organizations", Map.of(),
+                Map.of("payload", Map.of("organization_key", organizationKey)));
         Response response = given()
                     .header("Accept-Language", "en")
                     .contentType(ContentType.JSON)
@@ -129,7 +157,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         secondPhoneNumber.put("number", "30224180");
         Map<String, Object> secondCollaborator = new HashMap<>();
         secondCollaborator.put("collaborator_role", "OWNER");
-        secondCollaborator.put("document_number", DocumentGenerators.generateCpf());
+        secondCollaborator.put("document_number", CpfGenerator.generateCpf());
         secondCollaborator.put("name", "Bianca Torres");
         secondCollaborator.put("email", "bianca@lenha.com.br");
         secondCollaborator.put("password", "12345678");
@@ -158,11 +186,12 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_duplicatedCpf_returnsConflict() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
-        String cpf = DocumentGenerators.generateCpf();
+        String cpf = CpfGenerator.generateCpf();
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
         collaborator.put("document_number", cpf);
@@ -170,12 +199,23 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
         payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
+        String userId = UUID.randomUUID().toString();
+        String roleId = UUID.randomUUID().toString();
+        String organizationKey = UUID.randomUUID().toString();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"),
+                Map.of("payload", Map.of("id", roleId)));
+        MockTools.addExpectation("keycloak/post-users", Map.of(), Map.of(
+                "headers", Map.of("Location", List.of("/admin/realms/pulse-pass/users/" + userId))));
+        MockTools.addExpectation("keycloak/post-role_mappings", Map.of("user_id", userId));
+        MockTools.addExpectation("organization-service/post-organizations", Map.of(),
+                Map.of("payload", Map.of("organization_key", organizationKey)));
         Response response = given()
                     .header("Accept-Language", "en")
                     .contentType(ContentType.JSON)
@@ -197,7 +237,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         secondCollaborator.put("email", "bianca@lenha.com.br");
         secondCollaborator.put("password", "12345678");
         Map<String, Object> secondPayload = new HashMap<>();
-        secondPayload.put("document_number", DocumentGenerators.generateCnpj());
+        secondPayload.put("document_number", CnpjGenerator.generateCnpj());
         secondPayload.put("name", "Lenha Produções Artísticas Ltda");
         secondPayload.put("email", "contato@lenha.com.br");
         secondPayload.put("phone_number", secondPhoneNumber);
@@ -219,17 +259,18 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_cnpjWithInvalidCheckDigit_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
-        String cnpj = DocumentGenerators.generateCnpj();
+        String cnpj = CnpjGenerator.generateCnpj();
         char last = cnpj.charAt(13);
         String invalid = cnpj.substring(0, 13) + (last == '0' ? '1' : '0');
         Map<String, Object> payload = new HashMap<>();
@@ -255,11 +296,12 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_cpfWithInvalidCheckDigit_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
-        String cpf = DocumentGenerators.generateCpf();
+        String cpf = CpfGenerator.generateCpf();
         char last = cpf.charAt(10);
         String invalid = cpf.substring(0, 10) + (last == '0' ? '1' : '0');
         Map<String, Object> collaborator = new HashMap<>();
@@ -269,7 +311,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -291,18 +333,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_memberRole_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "MEMBER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -324,13 +367,14 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingDocumentNumber_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
@@ -357,18 +401,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingName_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
         payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
@@ -390,18 +435,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingEmail_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("phone_number", phoneNumber);
         payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
@@ -423,18 +469,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingPhoneNumber_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
@@ -456,18 +503,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingCollaborators_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -489,18 +537,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_cnpjWithThirteenDigits_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj().substring(0, 13));
+        payload.put("document_number", CnpjGenerator.generateCnpj().substring(0, 13));
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -523,18 +572,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_cpfWithTenDigits_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf().substring(0, 10));
+        collaborator.put("document_number", CpfGenerator.generateCpf().substring(0, 10));
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -557,18 +607,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_countryCodeWithPlusSign_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "+55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -591,18 +642,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_countryCodeWithFourDigits_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "5511");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -625,18 +677,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_areaCodeWithThreeDigits_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "511");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -659,18 +712,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_numberWithSevenDigits_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "3022418");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -693,18 +747,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_numberWithTenDigits_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "3022418012");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -727,18 +782,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_invalidEmail_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "not-an-email");
         payload.put("phone_number", phoneNumber);
@@ -761,18 +817,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_invalidCollaboratorEmail_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "not-an-email");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -795,18 +852,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_passwordWithSevenCharacters_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "1234567");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -829,12 +887,13 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_emptyCollaboratorList_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -857,24 +916,25 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_twoCollaborators_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> firstCollaborator = new HashMap<>();
         firstCollaborator.put("collaborator_role", "OWNER");
-        firstCollaborator.put("document_number", DocumentGenerators.generateCpf());
+        firstCollaborator.put("document_number", CpfGenerator.generateCpf());
         firstCollaborator.put("name", "Bianca Torres");
         firstCollaborator.put("email", "bianca@lenha.com.br");
         firstCollaborator.put("password", "12345678");
         Map<String, Object> secondCollaborator = new HashMap<>();
         secondCollaborator.put("collaborator_role", "OWNER");
-        secondCollaborator.put("document_number", DocumentGenerators.generateCpf());
+        secondCollaborator.put("document_number", CpfGenerator.generateCpf());
         secondCollaborator.put("name", "Bianca Torres");
         secondCollaborator.put("email", "bianca@lenha.com.br");
         secondCollaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -897,17 +957,18 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingCollaboratorCollaboratorRole_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -930,6 +991,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingCollaboratorDocumentNumber_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
@@ -940,7 +1002,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -963,17 +1025,18 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingCollaboratorName_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -996,17 +1059,18 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingCollaboratorEmail_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -1029,17 +1093,18 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingCollaboratorPassword_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -1062,17 +1127,18 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingPhoneCountryCode_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -1095,17 +1161,18 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingPhoneAreaCode_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -1128,17 +1195,18 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_missingPhoneNumberDigits_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -1161,13 +1229,14 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_cnpjWithMask_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
@@ -1195,6 +1264,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_cpfWithMask_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
@@ -1206,7 +1276,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -1229,13 +1299,14 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_cnpjWithLetters_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
@@ -1263,6 +1334,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_cpfWithLetters_returnsBadRequest() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
@@ -1274,7 +1346,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -1297,18 +1369,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_blankCollaboratorPassword_returnsRequiredAndSize() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "   ");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "Lenha Produções Artísticas Ltda");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -1332,13 +1405,14 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_blankDocumentNumber_returnsRequiredAndInvalidFormat() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
@@ -1367,18 +1441,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_blankName_returnsRequired() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("name", "   ");
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
@@ -1401,18 +1476,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_schemaErrorInPortuguese_returnsPortugueseMessage() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", DocumentGenerators.generateCpf());
+        collaborator.put("document_number", CpfGenerator.generateCpf());
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
         Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", DocumentGenerators.generateCnpj());
+        payload.put("document_number", CnpjGenerator.generateCnpj());
         payload.put("email", "contato@lenha.com.br");
         payload.put("phone_number", phoneNumber);
         payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
@@ -1436,6 +1512,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_malformedJson_returnsBadRequestWithBodyField() {
+        MockTools.clearMocker();
         Response response = given()
                     .contentType(ContentType.JSON)
                     .body("{\"document_number\": ")
@@ -1452,6 +1529,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_getMethod_returnsMethodNotAllowed() {
+        MockTools.clearMocker();
         Response response = given().when().get(POST_LEGAL_PERSONS).then().extract().response();
 
         assertThat(response.statusCode()).isEqualTo(405);
@@ -1461,6 +1539,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_plainTextContentType_returnsUnsupportedMediaType() {
+        MockTools.clearMocker();
         Response response = given()
                     .contentType(ContentType.TEXT)
                     .body("plain")
@@ -1476,6 +1555,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_unknownRoute_returnsNotFound() {
+        MockTools.clearMocker();
         Response response = given().when().get("/rota_inexistente").then().extract().response();
 
         assertThat(response.statusCode()).isEqualTo(404);
@@ -1485,18 +1565,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_identityProviderFailure_returnsUnprocessableContentAndKeepsRegistration() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
-        String cpf = DocumentGenerators.generateCpf();
+        String cpf = CpfGenerator.generateCpf();
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
         collaborator.put("document_number", cpf);
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
-        String cnpj = DocumentGenerators.generateCnpj();
+        String cnpj = CnpjGenerator.generateCnpj();
         Map<String, Object> payload = new HashMap<>();
         payload.put("document_number", cnpj);
         payload.put("name", "Lenha Produções Artísticas Ltda");
@@ -1504,10 +1585,9 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         payload.put("phone_number", phoneNumber);
         payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        MockServerHandlers.expectUserCreationFailure(cpf);
-        final int roleMappingsBefore = MockServerHandlers.retrieveRequests("POST",
-                MockServerHandlers.USERS_PATH + "/" + MockServerHandlers.DEFAULT_USER_ID + "/role-mappings/realm",
-                "organizer").size();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"));
+        MockTools.addExpectation("keycloak/post-users_server_error");
         Response response = given()
                     .header("Accept-Language", "en")
                     .contentType(ContentType.JSON)
@@ -1520,12 +1600,10 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         assertThat(response.statusCode()).isEqualTo(422);
         assertThat(response.jsonPath().getString("code")).isEqualTo("ONB00006");
         assertThat(response.jsonPath().getList("extra_fields")).isEmpty();
-        assertThat(MockServerHandlers.retrieveRequests("POST", MockServerHandlers.ORGANIZATIONS_PATH, cnpj)).isEmpty();
-        // The failed user creation returns no Location, so role-mapping calls cannot be matched by CPF;
-        // the count of calls to the default user path must not change.
-        assertThat(MockServerHandlers.retrieveRequests("POST",
-                MockServerHandlers.USERS_PATH + "/" + MockServerHandlers.DEFAULT_USER_ID + "/role-mappings/realm",
-                "organizer")).hasSize(roleMappingsBefore);
+        assertThat(MockTools.retrieveRequests("POST", "/admin/realms/pulse-pass/users")).hasSize(1);
+        assertThat(MockTools.retrieveRequests(
+                "POST", "/admin/realms/pulse-pass/users/.*/role-mappings/realm")).isEmpty();
+        assertThat(MockTools.retrieveRequests("POST", "/organization/internal/organizations")).isEmpty();
 
         Map<String, Object> secondPhoneNumber = new HashMap<>();
         secondPhoneNumber.put("country_code", "55");
@@ -1560,18 +1638,19 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
     @Test
     void createLegalPerson_organizationServiceFailure_returnsUnprocessableContentAndKeepsRegistration() {
+        MockTools.clearMocker();
         Map<String, Object> phoneNumber = new HashMap<>();
         phoneNumber.put("country_code", "55");
         phoneNumber.put("area_code", "51");
         phoneNumber.put("number", "30224180");
-        String cpf = DocumentGenerators.generateCpf();
+        String cpf = CpfGenerator.generateCpf();
         Map<String, Object> collaborator = new HashMap<>();
         collaborator.put("collaborator_role", "OWNER");
         collaborator.put("document_number", cpf);
         collaborator.put("name", "Bianca Torres");
         collaborator.put("email", "bianca@lenha.com.br");
         collaborator.put("password", "12345678");
-        String cnpj = DocumentGenerators.generateCnpj();
+        String cnpj = CnpjGenerator.generateCnpj();
         Map<String, Object> payload = new HashMap<>();
         payload.put("document_number", cnpj);
         payload.put("name", "Lenha Produções Artísticas Ltda");
@@ -1579,7 +1658,13 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         payload.put("phone_number", phoneNumber);
         payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
 
-        MockServerHandlers.expectOrganizationCreationFailure(cnpj);
+        String userId = UUID.randomUUID().toString();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"));
+        MockTools.addExpectation("keycloak/post-users", Map.of(), Map.of(
+                "headers", Map.of("Location", List.of("/admin/realms/pulse-pass/users/" + userId))));
+        MockTools.addExpectation("keycloak/post-role_mappings", Map.of("user_id", userId));
+        MockTools.addExpectation("organization-service/post-organizations_server_error");
         Response response = given()
                     .header("Accept-Language", "en")
                     .contentType(ContentType.JSON)

@@ -1,0 +1,17 @@
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/realms/pulse-pass/protocol/openid-connect/token"
+  },
+  "httpResponse": {
+    "statusCode": 200,
+    "headers": {
+      "Content-Type": ["application/json"]
+    },
+    "body": {
+      "access_token": "mock-access-token",
+      "expires_in": 300,
+      "token_type": "Bearer"
+    }
+  }
+}
