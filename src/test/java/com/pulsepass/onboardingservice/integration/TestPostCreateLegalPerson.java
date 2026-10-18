@@ -9,8 +9,6 @@ import com.pulsepass.onboardingservice.common.MockTools;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,24 +25,24 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @SuppressWarnings("unchecked")
     void createLegalPerson_validPayload_returnsCreatedAndCallsDependencies() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
         String cpf = CpfGenerator.generateCpf();
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", cpf);
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", cpf,
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
         String cnpj = CnpjGenerator.generateCnpj();
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", cnpj);
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> payload = Map.of(
+                "document_number", cnpj,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         String userId = UUID.randomUUID().toString();
         String roleId = UUID.randomUUID().toString();
@@ -112,23 +110,23 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_duplicatedCnpj_returnsConflictInPortuguese() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
         String cnpj = CnpjGenerator.generateCnpj();
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", cnpj);
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> payload = Map.of(
+                "document_number", cnpj,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         String userId = UUID.randomUUID().toString();
         String roleId = UUID.randomUUID().toString();
@@ -151,22 +149,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                     .extract().response();
         assertThat(response.statusCode()).isEqualTo(201);
 
-        Map<String, Object> secondPhoneNumber = new HashMap<>();
-        secondPhoneNumber.put("country_code", "55");
-        secondPhoneNumber.put("area_code", "51");
-        secondPhoneNumber.put("number", "30224180");
-        Map<String, Object> secondCollaborator = new HashMap<>();
-        secondCollaborator.put("collaborator_role", "OWNER");
-        secondCollaborator.put("document_number", CpfGenerator.generateCpf());
-        secondCollaborator.put("name", "Bianca Torres");
-        secondCollaborator.put("email", "bianca@lenha.com.br");
-        secondCollaborator.put("password", "12345678");
-        Map<String, Object> secondPayload = new HashMap<>();
-        secondPayload.put("document_number", cnpj);
-        secondPayload.put("name", "Lenha Produções Artísticas Ltda");
-        secondPayload.put("email", "contato@lenha.com.br");
-        secondPayload.put("phone_number", secondPhoneNumber);
-        secondPayload.put("legal_person_collaborators", new ArrayList<>(List.of(secondCollaborator)));
+        Map<String, Object> secondPhoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> secondCollaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> secondPayload = Map.of(
+                "document_number", cnpj,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", secondPhoneNumber,
+                "legal_person_collaborators", List.of(secondCollaborator));
 
         Response secondResponse = given()
                     .header("Accept-Language", "pt-BR")
@@ -187,23 +185,23 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_duplicatedCpf_returnsConflict() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
         String cpf = CpfGenerator.generateCpf();
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", cpf);
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", cpf,
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         String userId = UUID.randomUUID().toString();
         String roleId = UUID.randomUUID().toString();
@@ -226,22 +224,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                     .extract().response();
         assertThat(response.statusCode()).isEqualTo(201);
 
-        Map<String, Object> secondPhoneNumber = new HashMap<>();
-        secondPhoneNumber.put("country_code", "55");
-        secondPhoneNumber.put("area_code", "51");
-        secondPhoneNumber.put("number", "30224180");
-        Map<String, Object> secondCollaborator = new HashMap<>();
-        secondCollaborator.put("collaborator_role", "OWNER");
-        secondCollaborator.put("document_number", cpf);
-        secondCollaborator.put("name", "Bianca Torres");
-        secondCollaborator.put("email", "bianca@lenha.com.br");
-        secondCollaborator.put("password", "12345678");
-        Map<String, Object> secondPayload = new HashMap<>();
-        secondPayload.put("document_number", CnpjGenerator.generateCnpj());
-        secondPayload.put("name", "Lenha Produções Artísticas Ltda");
-        secondPayload.put("email", "contato@lenha.com.br");
-        secondPayload.put("phone_number", secondPhoneNumber);
-        secondPayload.put("legal_person_collaborators", new ArrayList<>(List.of(secondCollaborator)));
+        Map<String, Object> secondPhoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> secondCollaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", cpf,
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> secondPayload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", secondPhoneNumber,
+                "legal_person_collaborators", List.of(secondCollaborator));
 
         Response secondResponse = given()
                     .header("Accept-Language", "en")
@@ -260,25 +258,25 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_cnpjWithInvalidCheckDigit_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
         String cnpj = CnpjGenerator.generateCnpj();
         char last = cnpj.charAt(13);
         String invalid = cnpj.substring(0, 13) + (last == '0' ? '1' : '0');
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", invalid);
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> payload = Map.of(
+                "document_number", invalid,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -297,25 +295,25 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_cpfWithInvalidCheckDigit_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
         String cpf = CpfGenerator.generateCpf();
         char last = cpf.charAt(10);
         String invalid = cpf.substring(0, 10) + (last == '0' ? '1' : '0');
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", invalid);
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", invalid,
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -334,22 +332,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_memberRole_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "MEMBER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "MEMBER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -368,21 +366,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingDocumentNumber_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -402,21 +400,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingName_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -436,21 +434,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingEmail_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -470,21 +468,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingPhoneNumber_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -504,21 +502,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingCollaborators_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber);
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -538,22 +536,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_cnpjWithThirteenDigits_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj().substring(0, 13));
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj().substring(0, 13),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -573,22 +571,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_cpfWithTenDigits_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf().substring(0, 10));
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf().substring(0, 10),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -608,22 +606,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_countryCodeWithPlusSign_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "+55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "+55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -643,22 +641,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_countryCodeWithFourDigits_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "5511");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "5511",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -678,22 +676,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_areaCodeWithThreeDigits_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "511");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "511",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -713,22 +711,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_numberWithSevenDigits_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "3022418");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "3022418");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -748,22 +746,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_numberWithTenDigits_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "3022418012");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "3022418012");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -783,22 +781,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_invalidEmail_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "not-an-email");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "not-an-email",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -818,22 +816,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_invalidCollaboratorEmail_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "not-an-email");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "not-an-email",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -853,22 +851,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_passwordWithSevenCharacters_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "1234567");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "1234567");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -888,16 +886,16 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_emptyCollaboratorList_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", List.of());
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of());
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -917,28 +915,28 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_twoCollaborators_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> firstCollaborator = new HashMap<>();
-        firstCollaborator.put("collaborator_role", "OWNER");
-        firstCollaborator.put("document_number", CpfGenerator.generateCpf());
-        firstCollaborator.put("name", "Bianca Torres");
-        firstCollaborator.put("email", "bianca@lenha.com.br");
-        firstCollaborator.put("password", "12345678");
-        Map<String, Object> secondCollaborator = new HashMap<>();
-        secondCollaborator.put("collaborator_role", "OWNER");
-        secondCollaborator.put("document_number", CpfGenerator.generateCpf());
-        secondCollaborator.put("name", "Bianca Torres");
-        secondCollaborator.put("email", "bianca@lenha.com.br");
-        secondCollaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(firstCollaborator, secondCollaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> firstCollaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> secondCollaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(firstCollaborator, secondCollaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -958,21 +956,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingCollaboratorCollaboratorRole_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -992,21 +990,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingCollaboratorDocumentNumber_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1026,21 +1024,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingCollaboratorName_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1060,21 +1058,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingCollaboratorEmail_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1094,21 +1092,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingCollaboratorPassword_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1128,21 +1126,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingPhoneCountryCode_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1162,21 +1160,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingPhoneAreaCode_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1196,21 +1194,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_missingPhoneNumberDigits_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1230,22 +1228,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_cnpjWithMask_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", "11.222.333/0001-81");
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", "11.222.333/0001-81",
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1265,22 +1263,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_cpfWithMask_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", "529.982.247-25");
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", "529.982.247-25",
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1300,22 +1298,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_cnpjWithLetters_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", "1122233300018A");
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", "1122233300018A",
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1335,22 +1333,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_cpfWithLetters_returnsBadRequest() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", "5299822472A");
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", "5299822472A",
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1370,22 +1368,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_blankCollaboratorPassword_returnsRequiredAndSize() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "   ");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "   ");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1406,22 +1404,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_blankDocumentNumber_returnsRequiredAndInvalidFormat() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", "");
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", "",
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1442,22 +1440,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_blankName_returnsRequired() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("name", "   ");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "   ",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -1477,21 +1475,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_schemaErrorInPortuguese_returnsPortugueseMessage() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", CpfGenerator.generateCpf());
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", CnpjGenerator.generateCnpj());
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
                     .header("Accept-Language", "pt-BR")
@@ -1566,24 +1564,24 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_identityProviderFailure_returnsUnprocessableContentAndKeepsRegistration() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
         String cpf = CpfGenerator.generateCpf();
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", cpf);
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", cpf,
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
         String cnpj = CnpjGenerator.generateCnpj();
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", cnpj);
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> payload = Map.of(
+                "document_number", cnpj,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         MockTools.addExpectation("keycloak/post-token");
         MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"));
@@ -1605,22 +1603,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "POST", "/admin/realms/pulse-pass/users/.*/role-mappings/realm")).isEmpty();
         assertThat(MockTools.retrieveRequests("POST", "/organization/internal/organizations")).isEmpty();
 
-        Map<String, Object> secondPhoneNumber = new HashMap<>();
-        secondPhoneNumber.put("country_code", "55");
-        secondPhoneNumber.put("area_code", "51");
-        secondPhoneNumber.put("number", "30224180");
-        Map<String, Object> secondCollaborator = new HashMap<>();
-        secondCollaborator.put("collaborator_role", "OWNER");
-        secondCollaborator.put("document_number", cpf);
-        secondCollaborator.put("name", "Bianca Torres");
-        secondCollaborator.put("email", "bianca@lenha.com.br");
-        secondCollaborator.put("password", "12345678");
-        Map<String, Object> secondPayload = new HashMap<>();
-        secondPayload.put("document_number", cnpj);
-        secondPayload.put("name", "Lenha Produções Artísticas Ltda");
-        secondPayload.put("email", "contato@lenha.com.br");
-        secondPayload.put("phone_number", secondPhoneNumber);
-        secondPayload.put("legal_person_collaborators", new ArrayList<>(List.of(secondCollaborator)));
+        Map<String, Object> secondPhoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> secondCollaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", cpf,
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> secondPayload = Map.of(
+                "document_number", cnpj,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", secondPhoneNumber,
+                "legal_person_collaborators", List.of(secondCollaborator));
 
         Response secondResponse = given()
                     .header("Accept-Language", "en")
@@ -1639,24 +1637,24 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     @Test
     void createLegalPerson_organizationServiceFailure_returnsUnprocessableContentAndKeepsRegistration() {
         MockTools.clearMocker();
-        Map<String, Object> phoneNumber = new HashMap<>();
-        phoneNumber.put("country_code", "55");
-        phoneNumber.put("area_code", "51");
-        phoneNumber.put("number", "30224180");
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
         String cpf = CpfGenerator.generateCpf();
-        Map<String, Object> collaborator = new HashMap<>();
-        collaborator.put("collaborator_role", "OWNER");
-        collaborator.put("document_number", cpf);
-        collaborator.put("name", "Bianca Torres");
-        collaborator.put("email", "bianca@lenha.com.br");
-        collaborator.put("password", "12345678");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", cpf,
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
         String cnpj = CnpjGenerator.generateCnpj();
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("document_number", cnpj);
-        payload.put("name", "Lenha Produções Artísticas Ltda");
-        payload.put("email", "contato@lenha.com.br");
-        payload.put("phone_number", phoneNumber);
-        payload.put("legal_person_collaborators", new ArrayList<>(List.of(collaborator)));
+        Map<String, Object> payload = Map.of(
+                "document_number", cnpj,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_collaborators", List.of(collaborator));
 
         String userId = UUID.randomUUID().toString();
         MockTools.addExpectation("keycloak/post-token");
@@ -1678,22 +1676,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         assertThat(response.jsonPath().getString("code")).isEqualTo("ONB00007");
         assertThat(response.jsonPath().getList("extra_fields")).isEmpty();
 
-        Map<String, Object> secondPhoneNumber = new HashMap<>();
-        secondPhoneNumber.put("country_code", "55");
-        secondPhoneNumber.put("area_code", "51");
-        secondPhoneNumber.put("number", "30224180");
-        Map<String, Object> secondCollaborator = new HashMap<>();
-        secondCollaborator.put("collaborator_role", "OWNER");
-        secondCollaborator.put("document_number", cpf);
-        secondCollaborator.put("name", "Bianca Torres");
-        secondCollaborator.put("email", "bianca@lenha.com.br");
-        secondCollaborator.put("password", "12345678");
-        Map<String, Object> secondPayload = new HashMap<>();
-        secondPayload.put("document_number", cnpj);
-        secondPayload.put("name", "Lenha Produções Artísticas Ltda");
-        secondPayload.put("email", "contato@lenha.com.br");
-        secondPayload.put("phone_number", secondPhoneNumber);
-        secondPayload.put("legal_person_collaborators", new ArrayList<>(List.of(secondCollaborator)));
+        Map<String, Object> secondPhoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> secondCollaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", cpf,
+                "name", "Bianca Torres",
+                "email", "bianca@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> secondPayload = Map.of(
+                "document_number", cnpj,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", "contato@lenha.com.br",
+                "phone_number", secondPhoneNumber,
+                "legal_person_collaborators", List.of(secondCollaborator));
 
         Response secondResponse = given()
                     .header("Accept-Language", "en")
