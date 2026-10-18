@@ -1,9 +1,10 @@
-name: onboarding-service
+name: onboarding-service-test
 
 services:
-  onboarding-service-mysql:
+  mysql:
     image: mysql:8.0
-    container_name: onboarding-service-mysql
+    profiles: [test]
+    container_name: ${SERVICE_PREFIX:-onboarding-service-test}-mysql
     ports:
       - "${MYSQL_PORT}:3306"
     environment:
@@ -22,10 +23,10 @@ services:
     networks:
       - pulse-pass
 
-  onboarding-service-mockserver:
+  mockserver:
     image: mockserver/mockserver:5.15.0
     profiles: [test]
-    container_name: onboarding-service-mockserver
+    container_name: ${SERVICE_PREFIX:-onboarding-service-test}-mockserver
     ports:
       - "${MOCKSERVER_PORT}:1080"
     volumes:
@@ -39,25 +40,26 @@ services:
     networks:
       - pulse-pass
 
-  onboarding-service-api:
+  api:
     build:
       context: ..
       dockerfile: Dockerfile
-    container_name: onboarding-service-api
+    container_name: ${SERVICE_PREFIX:-onboarding-service-test}-api
     env_file: .env
     environment:
-      MYSQL_HOST: onboarding-service-mysql
+      MYSQL_HOST: ${MYSQL_HOST:-onboarding-service-test-mysql}
       MYSQL_PORT: 3306
-      KEYCLOAK_URL: ${KEYCLOAK_URL}
-      ORGANIZATION_SERVICE_URL: ${ORGANIZATION_SERVICE_URL}
+      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://onboarding-service-test-mockserver:1080}
+      ORGANIZATION_SERVICE_URL: ${ORGANIZATION_SERVICE_URL:-http://onboarding-service-test-mockserver:1080}
     ports:
-      - "${API_PORT}:8080"
+      - "${PUBLISHED_API_PORT:-8081}:8080"
     cap_add:
       - SYS_TIME
     depends_on:
-      onboarding-service-mysql:
+      mysql:
         condition: service_healthy
-      onboarding-service-mockserver:
+        required: false
+      mockserver:
         condition: service_healthy
         required: false
     healthcheck:

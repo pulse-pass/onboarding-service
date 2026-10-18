@@ -2,7 +2,7 @@ SET NAMES utf8mb4;
 
 CREATE SCHEMA IF NOT EXISTS onboarding;
 
-CREATE TABLE onboarding.person_type (
+CREATE TABLE IF NOT EXISTS onboarding.person_type (
     id            BIGINT        NOT NULL AUTO_INCREMENT,
     enumerator    VARCHAR(50)   NOT NULL,
     created_at    TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -10,10 +10,10 @@ CREATE TABLE onboarding.person_type (
     CONSTRAINT person_type_enumerator_unique UNIQUE (enumerator)
 );
 
-INSERT INTO onboarding.person_type (enumerator)
+INSERT IGNORE INTO onboarding.person_type (enumerator)
 VALUES ('NATURAL'), ('LEGAL');
 
-CREATE TABLE onboarding.person (
+CREATE TABLE IF NOT EXISTS onboarding.person (
     id               BIGINT        NOT NULL AUTO_INCREMENT,
     person_key       VARCHAR(36)   NOT NULL,
     person_type_id   BIGINT        NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE onboarding.person (
         REFERENCES onboarding.person_type (id)
 );
 
-CREATE TABLE onboarding.natural_person (
+CREATE TABLE IF NOT EXISTS onboarding.natural_person (
     id          BIGINT        NOT NULL AUTO_INCREMENT,
     person_id   BIGINT        NOT NULL,
     created_at  TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -40,7 +40,7 @@ CREATE TABLE onboarding.natural_person (
         REFERENCES onboarding.person (id)
 );
 
-CREATE TABLE onboarding.legal_person (
+CREATE TABLE IF NOT EXISTS onboarding.legal_person (
     id          BIGINT        NOT NULL AUTO_INCREMENT,
     person_id   BIGINT        NOT NULL,
     created_at  TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -51,7 +51,7 @@ CREATE TABLE onboarding.legal_person (
         REFERENCES onboarding.person (id)
 );
 
-CREATE TABLE onboarding.person_phone_number (
+CREATE TABLE IF NOT EXISTS onboarding.person_phone_number (
     id                       BIGINT        NOT NULL AUTO_INCREMENT,
     person_phone_number_key  VARCHAR(36)   NOT NULL,
     person_id                BIGINT        NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE onboarding.person_phone_number (
         REFERENCES onboarding.person (id)
 );
 
-CREATE TABLE onboarding.collaborator_role (
+CREATE TABLE IF NOT EXISTS onboarding.collaborator_role (
     id            BIGINT        NOT NULL AUTO_INCREMENT,
     enumerator    VARCHAR(50)   NOT NULL,
     created_at    TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -74,10 +74,10 @@ CREATE TABLE onboarding.collaborator_role (
     CONSTRAINT collaborator_role_enumerator_unique UNIQUE (enumerator)
 );
 
-INSERT INTO onboarding.collaborator_role (enumerator)
+INSERT IGNORE INTO onboarding.collaborator_role (enumerator)
 VALUES ('OWNER'), ('MEMBER');
 
-CREATE TABLE onboarding.legal_person_collaborator_status (
+CREATE TABLE IF NOT EXISTS onboarding.legal_person_collaborator_status (
     id            BIGINT        NOT NULL AUTO_INCREMENT,
     enumerator    VARCHAR(50)   NOT NULL,
     created_at    TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -85,10 +85,10 @@ CREATE TABLE onboarding.legal_person_collaborator_status (
     CONSTRAINT legal_person_collaborator_status_enumerator_unique UNIQUE (enumerator)
 );
 
-INSERT INTO onboarding.legal_person_collaborator_status (enumerator)
+INSERT IGNORE INTO onboarding.legal_person_collaborator_status (enumerator)
 VALUES ('ACTIVE'), ('DELETED');
 
-CREATE TABLE onboarding.legal_person_collaborator (
+CREATE TABLE IF NOT EXISTS onboarding.legal_person_collaborator (
     id                                    BIGINT        NOT NULL AUTO_INCREMENT,
     legal_person_collaborator_key         VARCHAR(36)   NOT NULL,
     legal_person_id                       BIGINT        NOT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE onboarding.legal_person_collaborator (
         REFERENCES onboarding.legal_person_collaborator_status (id)
 );
 
-CREATE TABLE onboarding.legal_person_collaborator_history (
+CREATE TABLE IF NOT EXISTS onboarding.legal_person_collaborator_history (
     id                                      BIGINT        NOT NULL AUTO_INCREMENT,
     legal_person_collaborator_history_key   VARCHAR(36)   NOT NULL,
     legal_person_collaborator_id            BIGINT        NOT NULL,
