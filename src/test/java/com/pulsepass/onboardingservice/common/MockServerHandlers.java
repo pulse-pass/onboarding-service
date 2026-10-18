@@ -18,7 +18,7 @@ public final class MockServerHandlers {
 
     public static final String DEFAULT_USER_ID = "00000000-0000-4000-8000-000000000001";
     private static final String ROLE_ID = "00000000-0000-4000-8000-000000000002";
-    private static final String INTERNAL_BASE_URL = "http://onboarding-service-mockserver:1080";
+    private static final String INTERNAL_BASE_URL = "http://onboarding-service-test-mockserver:1080";
     private static final int FAILURE_PRIORITY = 10;
 
     private static String baseUri = "http://localhost";
