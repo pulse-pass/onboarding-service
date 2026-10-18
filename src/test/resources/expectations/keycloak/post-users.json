@@ -1,0 +1,12 @@
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/admin/realms/pulse-pass/users"
+  },
+  "httpResponse": {
+    "statusCode": 201,
+    "headers": {
+      "Location": ["/admin/realms/pulse-pass/users/8c1f6a52-7d3b-4e0a-9b64-2a5d9e7f1c30"]
+    }
+  }
+}
