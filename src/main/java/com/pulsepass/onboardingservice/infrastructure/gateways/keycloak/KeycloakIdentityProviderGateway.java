@@ -111,6 +111,32 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
         return body != null && "invalid_grant".equals(body.error());
     }
 
+    private void validateTokenResponse(KeycloakTokenResponse body) {
+        if (body == null || body.accessToken() == null) {
+            logger.error("KeycloakIdentityProviderGateway.validateTokenResponse - Token response without access token");
+            throw new SessionException();
+        }
+
+        if (body.refreshToken() == null) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.validateTokenResponse - Token response without refresh token"
+            );
+            throw new SessionException();
+        }
+
+        if (body.expiresIn() == null) {
+            logger.error("KeycloakIdentityProviderGateway.validateTokenResponse - Token response without expiration");
+            throw new SessionException();
+        }
+
+        if (body.refreshExpiresIn() == null) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.validateTokenResponse - Token response without refresh expiration"
+            );
+            throw new SessionException();
+        }
+    }
+
     @Override
     public void createUser(CreateUserInputDTO input) {
         logger.info(
@@ -245,25 +271,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
         }
 
         KeycloakTokenResponse body = response.getBody();
-        if (body == null || body.accessToken() == null) {
-            logger.error("KeycloakIdentityProviderGateway.createSession - Token response without access token");
-            throw new SessionException();
-        }
-
-        if (body.refreshToken() == null) {
-            logger.error("KeycloakIdentityProviderGateway.createSession - Token response without refresh token");
-            throw new SessionException();
-        }
-
-        if (body.expiresIn() == null) {
-            logger.error("KeycloakIdentityProviderGateway.createSession - Token response without expiration");
-            throw new SessionException();
-        }
-
-        if (body.refreshExpiresIn() == null) {
-            logger.error("KeycloakIdentityProviderGateway.createSession - Token response without refresh expiration");
-            throw new SessionException();
-        }
+        validateTokenResponse(body);
 
         return new SessionOutputDTO(
                 body.accessToken(),
@@ -312,25 +320,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
         }
 
         KeycloakTokenResponse body = response.getBody();
-        if (body == null || body.accessToken() == null) {
-            logger.error("KeycloakIdentityProviderGateway.refreshSession - Token response without access token");
-            throw new SessionException();
-        }
-
-        if (body.refreshToken() == null) {
-            logger.error("KeycloakIdentityProviderGateway.refreshSession - Token response without refresh token");
-            throw new SessionException();
-        }
-
-        if (body.expiresIn() == null) {
-            logger.error("KeycloakIdentityProviderGateway.refreshSession - Token response without expiration");
-            throw new SessionException();
-        }
-
-        if (body.refreshExpiresIn() == null) {
-            logger.error("KeycloakIdentityProviderGateway.refreshSession - Token response without refresh expiration");
-            throw new SessionException();
-        }
+        validateTokenResponse(body);
 
         return new SessionOutputDTO(
                 body.accessToken(),
