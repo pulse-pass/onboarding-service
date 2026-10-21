@@ -14,17 +14,4 @@ public record KeycloakCreateUserRequest(
         @JsonProperty("attributes") Map<String, List<String>> attributes,
         @JsonProperty("credentials") List<KeycloakCredentialRequest> credentials
 ) {
-
-    @Override
-    public String toString() {
-        return "KeycloakCreateUserRequest[username=" + username
-                + ", email=" + email
-                + ", firstName=" + firstName
-                + ", lastName=" + lastName
-                + ", enabled=" + enabled
-                + ", emailVerified=" + emailVerified
-                + ", attributes=" + attributes
-                + ", credentials=" + credentials
-                + "]";
-    }
 }

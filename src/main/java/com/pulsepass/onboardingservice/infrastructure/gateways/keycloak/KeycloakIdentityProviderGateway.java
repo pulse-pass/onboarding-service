@@ -1,8 +1,15 @@
 package com.pulsepass.onboardingservice.infrastructure.gateways.keycloak;
 
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsException;
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
+import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.IdentityProviderGateway;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateUserInputDTO;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeleteSessionInputDTO;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.RefreshSessionInputDTO;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.SessionOutputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.UserRoleInputDTO;
 import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.dtos.KeycloakCreateUserRequest;
 import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.dtos.KeycloakCredentialRequest;
@@ -18,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -99,6 +107,36 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
         return new KeycloakRoleMappingRequest(response.id(), response.name());
     }
 
+    private boolean isInvalidGrant(KeycloakTokenResponse body) {
+        return body != null && "invalid_grant".equals(body.error());
+    }
+
+    private void validateTokenResponse(KeycloakTokenResponse body) {
+        if (body == null || body.accessToken() == null) {
+            logger.error("KeycloakIdentityProviderGateway.validateTokenResponse - Token response without access token");
+            throw new SessionException();
+        }
+
+        if (body.refreshToken() == null) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.validateTokenResponse - Token response without refresh token"
+            );
+            throw new SessionException();
+        }
+
+        if (body.expiresIn() == null) {
+            logger.error("KeycloakIdentityProviderGateway.validateTokenResponse - Token response without expiration");
+            throw new SessionException();
+        }
+
+        if (body.refreshExpiresIn() == null) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.validateTokenResponse - Token response without refresh expiration"
+            );
+            throw new SessionException();
+        }
+    }
+
     @Override
     public void createUser(CreateUserInputDTO input) {
         logger.info(
@@ -118,7 +156,10 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                 lastName,
                 true,
                 true,
-                Map.of("person_key", List.of(input.personKey())),
+                Map.of(
+                        "person_key", List.of(input.personKey()),
+                        "legal_person_key", List.of(input.legalPersonKey())
+                ),
                 List.of(new KeycloakCredentialRequest("password", input.password(), false))
         );
 
@@ -174,6 +215,156 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     ex
             );
             throw new UserCreationException();
+        }
+    }
+
+    @Override
+    public SessionOutputDTO createSession(CreateSessionInputDTO input) {
+        logger.info(
+                "KeycloakIdentityProviderGateway.createSession - Creating session {}",
+                Map.of("document_number", input.documentNumber())
+        );
+
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("grant_type", "password");
+        form.add("client_id", this.clientId);
+        form.add("client_secret", this.clientSecret);
+        form.add("username", input.documentNumber());
+        form.add("password", input.password());
+
+        ResponseEntity<KeycloakTokenResponse> response;
+        try {
+            response = this.restClient.post()
+                    .uri("/realms/{realm}/protocol/openid-connect/token", this.realm)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, (request, errorResponse) -> {})
+                    .toEntity(KeycloakTokenResponse.class);
+        } catch (RestClientException ex) {
+            logger.error("KeycloakIdentityProviderGateway.createSession - Token request failed", ex);
+            throw new SessionException();
+        }
+
+        if (response.getStatusCode() == HttpStatus.UNAUTHORIZED && isInvalidGrant(response.getBody())) {
+            logger.warn(
+                    "KeycloakIdentityProviderGateway.createSession - Invalid credentials {}",
+                    Map.of("document_number", input.documentNumber())
+            );
+            throw new InvalidCredentialsException();
+        }
+
+        if (response.getStatusCode() == HttpStatus.BAD_REQUEST && isInvalidGrant(response.getBody())) {
+            logger.warn(
+                    "KeycloakIdentityProviderGateway.createSession - Invalid credentials {}",
+                    Map.of("document_number", input.documentNumber())
+            );
+            throw new InvalidCredentialsException();
+        }
+
+        if (response.getStatusCode() != HttpStatus.OK) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.createSession - Unexpected status {}",
+                    Map.of("status", response.getStatusCode().value())
+            );
+            throw new SessionException();
+        }
+
+        KeycloakTokenResponse body = response.getBody();
+        validateTokenResponse(body);
+
+        return new SessionOutputDTO(
+                body.accessToken(),
+                body.expiresIn(),
+                body.refreshToken(),
+                body.refreshExpiresIn(),
+                body.tokenType()
+        );
+    }
+
+    @Override
+    public SessionOutputDTO refreshSession(RefreshSessionInputDTO input) {
+        logger.info("KeycloakIdentityProviderGateway.refreshSession - Refreshing session");
+
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("grant_type", "refresh_token");
+        form.add("client_id", this.clientId);
+        form.add("client_secret", this.clientSecret);
+        form.add("refresh_token", input.refreshToken());
+
+        ResponseEntity<KeycloakTokenResponse> response;
+        try {
+            response = this.restClient.post()
+                    .uri("/realms/{realm}/protocol/openid-connect/token", this.realm)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, (request, errorResponse) -> {})
+                    .toEntity(KeycloakTokenResponse.class);
+        } catch (RestClientException ex) {
+            logger.error("KeycloakIdentityProviderGateway.refreshSession - Token request failed", ex);
+            throw new SessionException();
+        }
+
+        if (response.getStatusCode() == HttpStatus.BAD_REQUEST && isInvalidGrant(response.getBody())) {
+            logger.warn("KeycloakIdentityProviderGateway.refreshSession - Invalid refresh token");
+            throw new InvalidRefreshTokenException();
+        }
+
+        if (response.getStatusCode() != HttpStatus.OK) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.refreshSession - Unexpected status {}",
+                    Map.of("status", response.getStatusCode().value())
+            );
+            throw new SessionException();
+        }
+
+        KeycloakTokenResponse body = response.getBody();
+        validateTokenResponse(body);
+
+        return new SessionOutputDTO(
+                body.accessToken(),
+                body.expiresIn(),
+                body.refreshToken(),
+                body.refreshExpiresIn(),
+                body.tokenType()
+        );
+    }
+
+    @Override
+    public void deleteSession(DeleteSessionInputDTO input) {
+        logger.info("KeycloakIdentityProviderGateway.deleteSession - Deleting session");
+
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("client_id", this.clientId);
+        form.add("client_secret", this.clientSecret);
+        form.add("refresh_token", input.refreshToken());
+
+        ResponseEntity<KeycloakTokenResponse> response;
+        try {
+            response = restClient.post()
+                    .uri("/realms/{realm}/protocol/openid-connect/logout", this.realm)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, (request, errorResponse) -> {})
+                    .toEntity(KeycloakTokenResponse.class);
+        } catch (RestClientException ex) {
+            logger.error("KeycloakIdentityProviderGateway.deleteSession - Logout request failed", ex);
+            throw new SessionException();
+        }
+
+        if (response.getStatusCode() == HttpStatus.BAD_REQUEST && isInvalidGrant(response.getBody())) {
+            logger.warn("KeycloakIdentityProviderGateway.deleteSession - Invalid refresh token");
+            throw new InvalidRefreshTokenException();
+        }
+
+        if (response.getStatusCode() != HttpStatus.NO_CONTENT) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.deleteSession - Unexpected status {}",
+                    Map.of("status", response.getStatusCode().value())
+            );
+            throw new SessionException();
         }
     }
 }

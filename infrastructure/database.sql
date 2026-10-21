@@ -40,6 +40,16 @@ CREATE TABLE IF NOT EXISTS onboarding.natural_person (
         REFERENCES onboarding.person (id)
 );
 
+INSERT IGNORE INTO onboarding.person (person_key, person_type_id, document_number, name, email)
+SELECT '00000000-0000-4000-8000-000000000001', id, '52998224725', 'Administrador PulsePass', 'admin@pulsepass.local'
+FROM onboarding.person_type
+WHERE enumerator = 'NATURAL';
+
+INSERT IGNORE INTO onboarding.natural_person (person_id)
+SELECT id
+FROM onboarding.person
+WHERE person_key = '00000000-0000-4000-8000-000000000001';
+
 CREATE TABLE IF NOT EXISTS onboarding.legal_person (
     id          BIGINT        NOT NULL AUTO_INCREMENT,
     person_id   BIGINT        NOT NULL,

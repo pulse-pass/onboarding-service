@@ -80,6 +80,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         assertThat(user.getString("email")).isEqualTo("bianca@lenha.com.br");
         assertThat(user.getBoolean("enabled")).isTrue();
         assertThat(user.getString("attributes.person_key[0]")).isNotBlank().isNotEqualTo(personKey);
+        assertThat(user.getString("attributes.legal_person_key[0]")).isEqualTo(personKey);
 
         List<Map<String, Object>> roleMappings = MockTools.retrieveRequests(
                 "POST", "/admin/realms/pulse-pass/users/" + userId + "/role-mappings/realm");

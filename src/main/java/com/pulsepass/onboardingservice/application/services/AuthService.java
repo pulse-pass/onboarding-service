@@ -1,0 +1,59 @@
+package com.pulsepass.onboardingservice.application.services;
+
+import com.pulsepass.onboardingservice.application.dtos.input.CreateSessionDTO;
+import com.pulsepass.onboardingservice.application.dtos.input.DeleteSessionDTO;
+import com.pulsepass.onboardingservice.application.dtos.input.RefreshSessionDTO;
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsException;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.IdentityProviderGateway;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateSessionInputDTO;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeleteSessionInputDTO;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.RefreshSessionInputDTO;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.SessionOutputDTO;
+import com.pulsepass.onboardingservice.domain.repositories.PersonRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+@Service
+public class AuthService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+
+    private final PersonRepository personRepository;
+    private final IdentityProviderGateway identityProviderGateway;
+
+    public AuthService(PersonRepository personRepository, IdentityProviderGateway identityProviderGateway) {
+        this.personRepository = personRepository;
+        this.identityProviderGateway = identityProviderGateway;
+    }
+
+    public SessionOutputDTO createSession(CreateSessionDTO dto) {
+        logger.info("AuthService.createSession - Starting");
+
+        if (personRepository.findByDocumentNumber(dto.documentNumber()).isEmpty()) {
+            logger.warn("AuthService.createSession - Person not found for CPF");
+            throw new InvalidCredentialsException();
+        }
+
+        SessionOutputDTO session = identityProviderGateway.createSession(
+                new CreateSessionInputDTO(dto.documentNumber(), dto.password())
+        );
+        logger.info("AuthService.createSession - Successfully finished");
+        return session;
+    }
+
+    public SessionOutputDTO refreshSession(RefreshSessionDTO dto) {
+        logger.info("AuthService.refreshSession - Starting");
+        SessionOutputDTO session = identityProviderGateway.refreshSession(
+                new RefreshSessionInputDTO(dto.refreshToken())
+        );
+        logger.info("AuthService.refreshSession - Successfully finished");
+        return session;
+    }
+
+    public void deleteSession(DeleteSessionDTO dto) {
+        logger.info("AuthService.deleteSession - Starting");
+        identityProviderGateway.deleteSession(new DeleteSessionInputDTO(dto.refreshToken()));
+        logger.info("AuthService.deleteSession - Successfully finished");
+    }
+}

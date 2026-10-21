@@ -147,6 +147,7 @@ public class LegalPersonService {
                     owner.email(),
                     owner.password(),
                     ownerKey,
+                    legalPersonKey,
                     List.of(UserRoleInputDTO.ORGANIZER)
             ));
         } catch (UserCreationException ex) {

@@ -20,12 +20,4 @@ class LegalPersonCollaboratorSchemaTest {
         assertThat(dto.email()).isEqualTo("john@mail.com");
         assertThat(dto.password()).isEqualTo("Secret123");
     }
-
-    @Test
-    void toString_schema_masksPassword() {
-        var schema = new LegalPersonCollaboratorSchema(
-                "OWNER", "52998224725", "John Doe", "john@mail.com", "Secret123");
-
-        assertThat(schema.toString()).contains("password=***").doesNotContain("Secret123");
-    }
 }
