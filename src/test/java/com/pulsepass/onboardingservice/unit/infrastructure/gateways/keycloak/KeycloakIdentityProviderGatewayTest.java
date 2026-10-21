@@ -4,8 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsException;
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
+import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateUserInputDTO;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeleteSessionInputDTO;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.RefreshSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.UserRoleInputDTO;
 import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.KeycloakIdentityProviderGateway;
 import com.pulsepass.onboardingservice.unit.infrastructure.gateways.StubHttpServer;
@@ -30,6 +36,11 @@ class KeycloakIdentityProviderGatewayTest {
     private static final String USERS_PATH = "/admin/realms/pulse-pass/users";
     private static final String USER_PATH = USERS_PATH + "/user-id";
     private static final String ROLE_MAPPINGS_PATH = USER_PATH + "/role-mappings/realm";
+    private static final String LOGOUT_PATH = "/realms/pulse-pass/protocol/openid-connect/logout";
+    private static final String TOKEN_BODY = """
+            {"access_token":"access-token","expires_in":300,"refresh_token":"refresh-token",
+             "refresh_expires_in":1800,"token_type":"Bearer"}
+            """;
     private static final String ROLE_PATH = "/admin/realms/pulse-pass/roles/organizer";
 
     private final JsonMapper mapper = JsonMapper.builder().build();
@@ -57,11 +68,12 @@ class KeycloakIdentityProviderGatewayTest {
 
     private static CreateUserInputDTO input(String name, List<UserRoleInputDTO> roles) {
         return new CreateUserInputDTO(
-                "52998224725", name, "john@mail.com", "Secret123", "owner-key", roles);
+                "52998224725", name, "john@mail.com", "Secret123", "owner-key", "legal-key", roles);
     }
 
     private void stubHappyPath() {
-        server.on("POST", TOKEN_PATH, Response.of(200, "{\"access_token\":\"tok\",\"expires_in\":60}"));
+        server.on("POST", TOKEN_PATH,
+                Response.of(200, "{\"access_token\":\"tok\",\"expires_in\":60}"));
         server.on("POST", USERS_PATH,
                 new Response(201, Map.of("Location", server.url() + USER_PATH), ""));
         server.on("GET", ROLE_PATH,
@@ -124,6 +136,7 @@ class KeycloakIdentityProviderGatewayTest {
         assertThat(body.get("enabled").asBoolean()).isTrue();
         assertThat(body.get("emailVerified").asBoolean()).isTrue();
         assertThat(body.get("attributes").get("person_key").get(0).asString()).isEqualTo("owner-key");
+        assertThat(body.get("attributes").get("legal_person_key").get(0).asString()).isEqualTo("legal-key");
         assertThat(body.get("credentials")).hasSize(1);
         assertThat(body.get("credentials").get(0).get("type").asString()).isEqualTo("password");
         assertThat(body.get("credentials").get(0).get("value").asString()).isEqualTo("Secret123");
@@ -288,5 +301,277 @@ class KeycloakIdentityProviderGatewayTest {
 
         assertThatThrownBy(() -> gateway.createUser(input("John Doe", List.of(UserRoleInputDTO.ORGANIZER))))
                 .isInstanceOf(UserCreationException.class);
+    }
+
+    @Test
+    void createSession_validCredentials_returnsSessionFromKeycloak() {
+        server.on("POST", TOKEN_PATH, Response.of(200, TOKEN_BODY));
+
+        var session = gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123"));
+
+        assertThat(session.accessToken()).isEqualTo("access-token");
+        assertThat(session.expiresIn()).isEqualTo(300);
+        assertThat(session.refreshToken()).isEqualTo("refresh-token");
+        assertThat(session.refreshExpiresIn()).isEqualTo(1800);
+        assertThat(session.tokenType()).isEqualTo("Bearer");
+    }
+
+    @Test
+    void createSession_validCredentials_sendsPasswordGrantForm() {
+        server.on("POST", TOKEN_PATH, Response.of(200, TOKEN_BODY));
+
+        gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123"));
+
+        var request = requestTo("POST", TOKEN_PATH);
+        assertThat(request.headers().get("content-type")).startsWith("application/x-www-form-urlencoded");
+        assertThat(request.body()).contains("grant_type=password")
+                .contains("client_id=onboarding-service")
+                .contains("client_secret=client-secret")
+                .contains("username=52998224725")
+                .contains("password=Secret123");
+    }
+
+    @Test
+    void createSession_unauthorizedInvalidGrant_throwsInvalidCredentialsException() {
+        server.on("POST", TOKEN_PATH, Response.of(401, "{\"error\":\"invalid_grant\"}"));
+
+        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "wrong")))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void createSession_badRequestInvalidGrant_throwsInvalidCredentialsException() {
+        server.on("POST", TOKEN_PATH, Response.of(400, "{\"error\":\"invalid_grant\"}"));
+
+        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "wrong")))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void createSession_unauthorizedClient_throwsSessionException() {
+        server.on("POST", TOKEN_PATH, Response.of(401, "{\"error\":\"unauthorized_client\"}"));
+
+        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void createSession_serverError_throwsSessionException() {
+        server.on("POST", TOKEN_PATH, Response.of(500, "{}"));
+
+        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void createSession_bodyWithoutAccessToken_throwsSessionException() {
+        server.on("POST", TOKEN_PATH, Response.of(200, "{}"));
+
+        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void createSession_bodyWithoutRefreshToken_throwsSessionException() {
+        server.on("POST", TOKEN_PATH,
+                Response.of(200, "{\"access_token\":\"a\",\"expires_in\":300,\"refresh_expires_in\":1800}"));
+
+        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void createSession_bodyWithoutExpiresIn_throwsSessionException() {
+        server.on("POST", TOKEN_PATH,
+                Response.of(200, "{\"access_token\":\"a\",\"refresh_token\":\"r\",\"refresh_expires_in\":1800}"));
+
+        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void createSession_bodyWithoutRefreshExpiresIn_throwsSessionException() {
+        server.on("POST", TOKEN_PATH,
+                Response.of(200, "{\"access_token\":\"a\",\"refresh_token\":\"r\",\"expires_in\":300}"));
+
+        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void createSession_emptyBody_throwsSessionException() {
+        server.on("POST", TOKEN_PATH, Response.empty(200));
+
+        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void createSession_serverDown_throwsSessionException() {
+        server.close();
+
+        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void refreshSession_validToken_returnsSessionAndSendsRefreshGrantForm() {
+        server.on("POST", TOKEN_PATH, Response.of(200, TOKEN_BODY));
+
+        var session = gateway.refreshSession(new RefreshSessionInputDTO("old-refresh-token"));
+
+        assertThat(session.accessToken()).isEqualTo("access-token");
+        assertThat(session.refreshToken()).isEqualTo("refresh-token");
+        var request = requestTo("POST", TOKEN_PATH);
+        assertThat(request.body()).contains("grant_type=refresh_token")
+                .contains("client_id=onboarding-service")
+                .contains("client_secret=client-secret")
+                .contains("refresh_token=old-refresh-token")
+                .doesNotContain("username=");
+    }
+
+    @Test
+    void refreshSession_badRequestInvalidGrant_throwsInvalidRefreshTokenException() {
+        server.on("POST", TOKEN_PATH, Response.of(400, "{\"error\":\"invalid_grant\"}"));
+
+        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("expired")))
+                .isInstanceOf(InvalidRefreshTokenException.class);
+    }
+
+    @Test
+    void refreshSession_serverError_throwsSessionException() {
+        server.on("POST", TOKEN_PATH, Response.of(503, "{}"));
+
+        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void refreshSession_unauthorizedInvalidClient_throwsSessionException() {
+        server.on("POST", TOKEN_PATH, Response.of(401, "{\"error\":\"invalid_client\"}"));
+
+        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void refreshSession_bodyWithoutAccessToken_throwsSessionException() {
+        server.on("POST", TOKEN_PATH, Response.of(200, "{}"));
+
+        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void refreshSession_emptyBody_throwsSessionException() {
+        server.on("POST", TOKEN_PATH, Response.empty(200));
+
+        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void refreshSession_bodyWithoutRefreshToken_throwsSessionException() {
+        server.on("POST", TOKEN_PATH,
+                Response.of(200, "{\"access_token\":\"a\",\"expires_in\":300,\"refresh_expires_in\":1800}"));
+
+        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void refreshSession_bodyWithoutExpiresIn_throwsSessionException() {
+        server.on("POST", TOKEN_PATH,
+                Response.of(200, "{\"access_token\":\"a\",\"refresh_token\":\"r\",\"refresh_expires_in\":1800}"));
+
+        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void refreshSession_bodyWithoutRefreshExpiresIn_throwsSessionException() {
+        server.on("POST", TOKEN_PATH,
+                Response.of(200, "{\"access_token\":\"a\",\"refresh_token\":\"r\",\"expires_in\":300}"));
+
+        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void refreshSession_serverDown_throwsSessionException() {
+        server.close();
+
+        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void deleteSession_validToken_sendsLogoutForm() {
+        server.on("POST", LOGOUT_PATH, Response.empty(204));
+
+        assertThatCode(() -> gateway.deleteSession(new DeleteSessionInputDTO("refresh-token")))
+                .doesNotThrowAnyException();
+
+        var request = requestTo("POST", LOGOUT_PATH);
+        assertThat(request.headers().get("content-type")).startsWith("application/x-www-form-urlencoded");
+        assertThat(request.body()).contains("client_id=onboarding-service")
+                .contains("client_secret=client-secret")
+                .contains("refresh_token=refresh-token");
+    }
+
+    @Test
+    void deleteSession_badRequestInvalidGrant_throwsInvalidRefreshTokenException() {
+        server.on("POST", LOGOUT_PATH, Response.of(400, "{\"error\":\"invalid_grant\"}"));
+
+        assertThatThrownBy(() -> gateway.deleteSession(new DeleteSessionInputDTO("expired")))
+                .isInstanceOf(InvalidRefreshTokenException.class);
+    }
+
+    @Test
+    void deleteSession_badRequestInvalidRequest_throwsSessionException() {
+        server.on("POST", LOGOUT_PATH, Response.of(400, "{\"error\":\"invalid_request\"}"));
+
+        assertThatThrownBy(() -> gateway.deleteSession(new DeleteSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void deleteSession_badRequestEmptyBody_throwsSessionException() {
+        server.on("POST", LOGOUT_PATH, Response.empty(400));
+
+        assertThatThrownBy(() -> gateway.deleteSession(new DeleteSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void deleteSession_unauthorizedInvalidClient_throwsSessionException() {
+        server.on("POST", LOGOUT_PATH, Response.of(401, "{\"error\":\"invalid_client\"}"));
+
+        assertThatThrownBy(() -> gateway.deleteSession(new DeleteSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void deleteSession_serverError_throwsSessionException() {
+        server.on("POST", LOGOUT_PATH, Response.of(500, "{}"));
+
+        assertThatThrownBy(() -> gateway.deleteSession(new DeleteSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void deleteSession_unexpectedOkStatus_throwsSessionException() {
+        server.on("POST", LOGOUT_PATH, Response.empty(200));
+
+        assertThatThrownBy(() -> gateway.deleteSession(new DeleteSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void deleteSession_serverDown_throwsSessionException() {
+        server.close();
+
+        assertThatThrownBy(() -> gateway.deleteSession(new DeleteSessionInputDTO("refresh")))
+                .isInstanceOf(SessionException.class);
     }
 }

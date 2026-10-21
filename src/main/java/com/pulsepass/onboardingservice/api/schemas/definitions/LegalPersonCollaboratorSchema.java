@@ -17,14 +17,4 @@ public record LegalPersonCollaboratorSchema(
     public LegalPersonCollaboratorDTO toDTO() {
         return new LegalPersonCollaboratorDTO(collaboratorRole, documentNumber, name, email, password);
     }
-
-    @Override
-    public String toString() {
-        return "LegalPersonCollaboratorSchema[collaboratorRole=" + collaboratorRole
-                + ", documentNumber=" + documentNumber
-                + ", name=" + name
-                + ", email=" + email
-                + ", password=***"
-                + "]";
-    }
 }

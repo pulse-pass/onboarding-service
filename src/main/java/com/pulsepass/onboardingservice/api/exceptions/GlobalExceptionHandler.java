@@ -2,11 +2,14 @@ package com.pulsepass.onboardingservice.api.exceptions;
 
 import com.pulsepass.onboardingservice.domain.exceptions.DomainException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidCollaboratorRoleException;
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidLegalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidNaturalPersonDocumentException;
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
+import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +39,10 @@ public class GlobalExceptionHandler {
             InvalidNaturalPersonDocumentException.class, HttpStatus.BAD_REQUEST,
             InvalidCollaboratorRoleException.class, HttpStatus.BAD_REQUEST,
             UserCreationException.class, HttpStatus.UNPROCESSABLE_CONTENT,
-            OrganizationCreationException.class, HttpStatus.UNPROCESSABLE_CONTENT
+            OrganizationCreationException.class, HttpStatus.UNPROCESSABLE_CONTENT,
+            InvalidCredentialsException.class, HttpStatus.UNAUTHORIZED,
+            InvalidRefreshTokenException.class, HttpStatus.UNAUTHORIZED,
+            SessionException.class, HttpStatus.UNPROCESSABLE_CONTENT
     );
 
     private final MessageSource messageSource;

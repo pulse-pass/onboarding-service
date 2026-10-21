@@ -7,12 +7,4 @@ public record KeycloakCredentialRequest(
         @JsonProperty("value") String value,
         @JsonProperty("temporary") boolean temporary
 ) {
-
-    @Override
-    public String toString() {
-        return "KeycloakCredentialRequest[type=" + type
-                + ", value=***"
-                + ", temporary=" + temporary
-                + "]";
-    }
 }

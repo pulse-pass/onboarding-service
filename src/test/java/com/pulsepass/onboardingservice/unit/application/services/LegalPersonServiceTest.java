@@ -245,7 +245,8 @@ class LegalPersonServiceTest {
         ArgumentCaptor<CreateUserInputDTO> userCaptor = ArgumentCaptor.forClass(CreateUserInputDTO.class);
         verify(identityProviderGateway).createUser(userCaptor.capture());
         assertThat(userCaptor.getValue()).isEqualTo(new CreateUserInputDTO(
-                CPF, "John Doe", "john@mail.com", "Secret123", ownerKey, List.of(UserRoleInputDTO.ORGANIZER)));
+                CPF, "John Doe", "john@mail.com", "Secret123", ownerKey,
+                result.getPerson().getPersonKey(), List.of(UserRoleInputDTO.ORGANIZER)));
 
         ArgumentCaptor<CreateOrganizationInputDTO> organizationCaptor =
                 ArgumentCaptor.forClass(CreateOrganizationInputDTO.class);

@@ -7,14 +7,4 @@ public record LegalPersonCollaboratorDTO(
         String email,
         String password
 ) {
-
-    @Override
-    public String toString() {
-        return "LegalPersonCollaboratorDTO[collaboratorRole=" + collaboratorRole
-                + ", documentNumber=" + documentNumber
-                + ", name=" + name
-                + ", email=" + email
-                + ", password=***"
-                + "]";
-    }
 }

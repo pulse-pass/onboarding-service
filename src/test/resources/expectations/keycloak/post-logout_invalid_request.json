@@ -1,0 +1,16 @@
+{
+  "httpRequest": {
+    "method": "POST",
+    "path": "/realms/pulse-pass/protocol/openid-connect/logout"
+  },
+  "httpResponse": {
+    "statusCode": 400,
+    "headers": {
+      "Content-Type": ["application/json"]
+    },
+    "body": {
+      "error": "invalid_request",
+      "error_description": "Missing form parameter: refresh_token"
+    }
+  }
+}

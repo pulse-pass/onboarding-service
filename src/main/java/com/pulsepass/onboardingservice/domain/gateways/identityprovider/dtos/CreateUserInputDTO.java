@@ -8,17 +8,7 @@ public record CreateUserInputDTO(
         String email,
         String password,
         String personKey,
+        String legalPersonKey,
         List<UserRoleInputDTO> roles
 ) {
-
-    @Override
-    public String toString() {
-        return "CreateUserInputDTO[documentNumber=" + documentNumber
-                + ", name=" + name
-                + ", email=" + email
-                + ", password=***"
-                + ", personKey=" + personKey
-                + ", roles=" + roles
-                + "]";
-    }
 }

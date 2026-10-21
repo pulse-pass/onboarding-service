@@ -8,11 +8,14 @@ import com.pulsepass.onboardingservice.api.exceptions.ExtraFieldErrorResponse;
 import com.pulsepass.onboardingservice.api.exceptions.GlobalExceptionHandler;
 import com.pulsepass.onboardingservice.domain.exceptions.DomainException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidCollaboratorRoleException;
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidLegalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidNaturalPersonDocumentException;
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
+import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
 import java.util.List;
 import java.util.Locale;
@@ -51,6 +54,9 @@ class GlobalExceptionHandlerTest {
         messages.addMessage("error.legal_person_collaborator.invalid_role", Locale.ENGLISH, "invalid role");
         messages.addMessage("error.user.creation", Locale.ENGLISH, "user failed");
         messages.addMessage("error.organization.creation", Locale.ENGLISH, "organization failed");
+        messages.addMessage("error.invalid_credentials", Locale.ENGLISH, "invalid credentials");
+        messages.addMessage("error.invalid_refresh_token", Locale.ENGLISH, "session expired");
+        messages.addMessage("error.session", Locale.ENGLISH, "session failed");
         messages.addMessage("error.not_found", Locale.ENGLISH, "not found");
         messages.addMessage("error.method_not_allowed", Locale.ENGLISH, "method not allowed");
         messages.addMessage("error.unsupported_media_type", Locale.ENGLISH, "unsupported media type");
@@ -138,6 +144,33 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(response.getBody())
                 .isEqualTo(new ErrorResponse("Unprocessable Content", "organization failed", "ONB00007", List.of()));
+    }
+
+    @Test
+    void handleDomain_invalidCredentials_returns401WithGen00401() {
+        var response = handler.handleDomain(new InvalidCredentialsException());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody())
+                .isEqualTo(new ErrorResponse("Unauthorized", "invalid credentials", "GEN00401", List.of()));
+    }
+
+    @Test
+    void handleDomain_invalidRefreshToken_returns401WithGen00401() {
+        var response = handler.handleDomain(new InvalidRefreshTokenException());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody())
+                .isEqualTo(new ErrorResponse("Unauthorized", "session expired", "GEN00401", List.of()));
+    }
+
+    @Test
+    void handleDomain_session_returns422WithOnb00008() {
+        var response = handler.handleDomain(new SessionException());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(response.getBody())
+                .isEqualTo(new ErrorResponse("Unprocessable Content", "session failed", "ONB00008", List.of()));
     }
 
     @Test
