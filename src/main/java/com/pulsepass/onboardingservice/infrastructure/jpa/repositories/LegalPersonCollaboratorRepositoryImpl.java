@@ -19,4 +19,12 @@ public class LegalPersonCollaboratorRepositoryImpl implements LegalPersonCollabo
         var saved = jpaRepository.save(LegalPersonCollaboratorEntity.fromDomain(legalPersonCollaborator));
         return saved.toDomain();
     }
+
+    @Override
+    public boolean existsByLegalPersonKeyAndNaturalPersonKey(String legalPersonKey, String naturalPersonKey) {
+        return jpaRepository.existsByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
+                legalPersonKey,
+                naturalPersonKey
+        );
+    }
 }

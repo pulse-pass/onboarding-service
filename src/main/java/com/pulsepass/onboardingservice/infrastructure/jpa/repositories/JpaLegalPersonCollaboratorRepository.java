@@ -4,4 +4,9 @@ import com.pulsepass.onboardingservice.infrastructure.jpa.entities.LegalPersonCo
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface JpaLegalPersonCollaboratorRepository extends JpaRepository<LegalPersonCollaboratorEntity, Long> {
+
+    boolean existsByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
+            String legalPersonKey,
+            String naturalPersonKey
+    );
 }

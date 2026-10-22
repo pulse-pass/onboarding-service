@@ -12,15 +12,20 @@ import com.pulsepass.onboardingservice.application.dtos.input.CreateSessionDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.DeleteSessionDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.RefreshSessionDTO;
 import com.pulsepass.onboardingservice.application.services.AuthService;
+import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
 import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidSessionException;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.IdentityProviderGateway;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeleteSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.RefreshSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.SessionOutputDTO;
+import com.pulsepass.onboardingservice.domain.repositories.LegalPersonCollaboratorRepository;
+import com.pulsepass.onboardingservice.domain.repositories.LegalPersonRepository;
 import com.pulsepass.onboardingservice.domain.repositories.PersonRepository;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,10 +42,19 @@ class AuthServiceTest {
     private PersonRepository personRepository;
 
     @Mock
+    private LegalPersonRepository legalPersonRepository;
+
+    @Mock
+    private LegalPersonCollaboratorRepository legalPersonCollaboratorRepository;
+
+    @Mock
     private IdentityProviderGateway identityProviderGateway;
 
     @Mock
     private Person person;
+
+    @Mock
+    private LegalPerson legalPerson;
 
     @InjectMocks
     private AuthService service;
@@ -107,5 +121,61 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> service.deleteSession(new DeleteSessionDTO("expired")))
                 .isInstanceOf(InvalidRefreshTokenException.class);
+    }
+
+    @Test
+    void getSession_organizerWithLegalPerson_returnsPersonRolesAndLegalPerson() {
+        when(personRepository.findByPersonKey("person-key")).thenReturn(Optional.of(person));
+        when(legalPersonRepository.findByPersonKey("legal-person-key")).thenReturn(Optional.of(legalPerson));
+        when(legalPersonCollaboratorRepository.existsByLegalPersonKeyAndNaturalPersonKey(
+                "legal-person-key", "person-key")).thenReturn(true);
+
+        var result = service.getSession("person-key", "legal-person-key", "offline_access,organizer");
+
+        assertThat(result.person()).isSameAs(person);
+        assertThat(result.legalPerson()).isSameAs(legalPerson);
+        assertThat(result.roles()).isEqualTo(List.of("offline_access", "organizer"));
+    }
+
+    @Test
+    void getSession_adminWithoutAgentKey_returnsNullLegalPersonWithoutQueryingIt() {
+        when(personRepository.findByPersonKey("person-key")).thenReturn(Optional.of(person));
+
+        var result = service.getSession("person-key", null, "admin");
+
+        assertThat(result.person()).isSameAs(person);
+        assertThat(result.legalPerson()).isNull();
+        assertThat(result.roles()).containsExactly("admin");
+        verify(legalPersonRepository, never()).findByPersonKey(any());
+        verify(legalPersonCollaboratorRepository, never()).existsByLegalPersonKeyAndNaturalPersonKey(any(), any());
+    }
+
+    @Test
+    void getSession_personNotFound_throwsInvalidSession() {
+        when(personRepository.findByPersonKey("person-key")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getSession("person-key", "legal-person-key", "organizer"))
+                .isInstanceOf(InvalidSessionException.class);
+        verify(legalPersonRepository, never()).findByPersonKey(any());
+    }
+
+    @Test
+    void getSession_legalPersonNotFound_throwsInvalidSession() {
+        when(personRepository.findByPersonKey("person-key")).thenReturn(Optional.of(person));
+        when(legalPersonRepository.findByPersonKey("legal-person-key")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getSession("person-key", "legal-person-key", "organizer"))
+                .isInstanceOf(InvalidSessionException.class);
+    }
+
+    @Test
+    void getSession_notCollaboratorOfLegalPerson_throwsInvalidSession() {
+        when(personRepository.findByPersonKey("person-key")).thenReturn(Optional.of(person));
+        when(legalPersonRepository.findByPersonKey("legal-person-key")).thenReturn(Optional.of(legalPerson));
+        when(legalPersonCollaboratorRepository.existsByLegalPersonKeyAndNaturalPersonKey(
+                "legal-person-key", "person-key")).thenReturn(false);
+
+        assertThatThrownBy(() -> service.getSession("person-key", "legal-person-key", "organizer"))
+                .isInstanceOf(InvalidSessionException.class);
     }
 }

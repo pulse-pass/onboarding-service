@@ -8,4 +8,6 @@ public interface PersonRepository {
     Person save(Person person);
 
     Optional<Person> findByDocumentNumber(String documentNumber);
+
+    Optional<Person> findByPersonKey(String personKey);
 }

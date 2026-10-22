@@ -13,6 +13,7 @@ import com.pulsepass.onboardingservice.infrastructure.jpa.entities.LegalPersonEn
 import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.JpaLegalPersonRepository;
 import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.LegalPersonRepositoryImpl;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -42,5 +43,23 @@ class LegalPersonRepositoryImplTest {
         verify(jpaRepository).save(captor.capture());
         assertThat(captor.getValue().toDomain()).usingRecursiveComparison().isEqualTo(domain);
         assertThat(saved).usingRecursiveComparison().isEqualTo(domain);
+    }
+
+    @Test
+    void findByPersonKey_existing_returnsMappedDomain() {
+        var domain = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
+                "12345678000195", "Acme", "acme@mail.com", NOW, NOW), NOW, NOW);
+        when(jpaRepository.findByPersonPersonKey("person-key"))
+                .thenReturn(Optional.of(LegalPersonEntity.fromDomain(domain)));
+
+        assertThat(repository.findByPersonKey("person-key")).get()
+                .usingRecursiveComparison().isEqualTo(domain);
+    }
+
+    @Test
+    void findByPersonKey_missing_returnsEmpty() {
+        when(jpaRepository.findByPersonPersonKey("person-key")).thenReturn(Optional.empty());
+
+        assertThat(repository.findByPersonKey("person-key")).isEmpty();
     }
 }

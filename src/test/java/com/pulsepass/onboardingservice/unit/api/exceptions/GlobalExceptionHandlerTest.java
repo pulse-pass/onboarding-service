@@ -12,6 +12,7 @@ import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsExcep
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidLegalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidNaturalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidSessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
@@ -36,6 +37,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 class GlobalExceptionHandlerTest {
@@ -56,6 +58,7 @@ class GlobalExceptionHandlerTest {
         messages.addMessage("error.organization.creation", Locale.ENGLISH, "organization failed");
         messages.addMessage("error.invalid_credentials", Locale.ENGLISH, "invalid credentials");
         messages.addMessage("error.invalid_refresh_token", Locale.ENGLISH, "session expired");
+        messages.addMessage("error.invalid_session", Locale.ENGLISH, "invalid session");
         messages.addMessage("error.session", Locale.ENGLISH, "session failed");
         messages.addMessage("error.not_found", Locale.ENGLISH, "not found");
         messages.addMessage("error.method_not_allowed", Locale.ENGLISH, "method not allowed");
@@ -165,6 +168,15 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void handleDomain_invalidSession_returns401WithGen00401() {
+        var response = handler.handleDomain(new InvalidSessionException());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody())
+                .isEqualTo(new ErrorResponse("Unauthorized", "invalid session", "GEN00401", List.of()));
+    }
+
+    @Test
     void handleDomain_session_returns422WithOnb00008() {
         var response = handler.handleDomain(new SessionException());
 
@@ -243,6 +255,22 @@ class GlobalExceptionHandlerTest {
                 "bad request",
                 "GEN00400",
                 List.of(new ExtraFieldErrorResponse("body", "INVALID_FORMAT"))
+        ));
+    }
+
+    @Test
+    void handleMissingHeader_headerAbsent_returns400WithHeaderField() throws Exception {
+        var parameter = new MethodParameter(getClass().getDeclaredMethod("dummy", String.class), 0);
+        var exception = new MissingRequestHeaderException("selected-user-key", parameter);
+
+        var response = handler.handleMissingHeader(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isEqualTo(new ErrorResponse(
+                "Bad Request",
+                "bad request",
+                "GEN00400",
+                List.of(new ExtraFieldErrorResponse("selected-user-key", "REQUIRED"))
         ));
     }
 
