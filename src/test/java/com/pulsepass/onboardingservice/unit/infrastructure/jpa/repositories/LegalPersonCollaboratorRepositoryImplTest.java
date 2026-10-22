@@ -52,4 +52,20 @@ class LegalPersonCollaboratorRepositoryImplTest {
         assertThat(captor.getValue().toDomain()).usingRecursiveComparison().isEqualTo(domain);
         assertThat(saved).usingRecursiveComparison().isEqualTo(domain);
     }
+
+    @Test
+    void existsByLegalPersonKeyAndNaturalPersonKey_linked_returnsTrue() {
+        when(jpaRepository.existsByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
+                "legal-key", "natural-key")).thenReturn(true);
+
+        assertThat(repository.existsByLegalPersonKeyAndNaturalPersonKey("legal-key", "natural-key")).isTrue();
+    }
+
+    @Test
+    void existsByLegalPersonKeyAndNaturalPersonKey_notLinked_returnsFalse() {
+        when(jpaRepository.existsByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
+                "legal-key", "natural-key")).thenReturn(false);
+
+        assertThat(repository.existsByLegalPersonKeyAndNaturalPersonKey("legal-key", "natural-key")).isFalse();
+    }
 }

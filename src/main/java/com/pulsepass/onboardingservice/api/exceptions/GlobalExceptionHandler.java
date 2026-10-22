@@ -6,6 +6,7 @@ import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsExcep
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidLegalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidNaturalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidSessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
@@ -23,6 +24,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -32,18 +34,18 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    private static final Map<Class<? extends DomainException>, HttpStatus> STATUS_MAP = Map.of(
-            LegalPersonAlreadyExistsException.class, HttpStatus.CONFLICT,
-            NaturalPersonAlreadyExistsException.class, HttpStatus.CONFLICT,
-            InvalidLegalPersonDocumentException.class, HttpStatus.BAD_REQUEST,
-            InvalidNaturalPersonDocumentException.class, HttpStatus.BAD_REQUEST,
-            InvalidCollaboratorRoleException.class, HttpStatus.BAD_REQUEST,
-            UserCreationException.class, HttpStatus.UNPROCESSABLE_CONTENT,
-            OrganizationCreationException.class, HttpStatus.UNPROCESSABLE_CONTENT,
-            InvalidCredentialsException.class, HttpStatus.UNAUTHORIZED,
-            InvalidRefreshTokenException.class, HttpStatus.UNAUTHORIZED,
-            SessionException.class, HttpStatus.UNPROCESSABLE_CONTENT
-    );
+    private static final Map<Class<? extends DomainException>, HttpStatus> STATUS_MAP = Map.ofEntries(
+            Map.entry(LegalPersonAlreadyExistsException.class, HttpStatus.CONFLICT),
+            Map.entry(NaturalPersonAlreadyExistsException.class, HttpStatus.CONFLICT),
+            Map.entry(InvalidLegalPersonDocumentException.class, HttpStatus.BAD_REQUEST),
+            Map.entry(InvalidNaturalPersonDocumentException.class, HttpStatus.BAD_REQUEST),
+            Map.entry(InvalidCollaboratorRoleException.class, HttpStatus.BAD_REQUEST),
+            Map.entry(UserCreationException.class, HttpStatus.UNPROCESSABLE_CONTENT),
+            Map.entry(OrganizationCreationException.class, HttpStatus.UNPROCESSABLE_CONTENT),
+            Map.entry(InvalidCredentialsException.class, HttpStatus.UNAUTHORIZED),
+            Map.entry(InvalidRefreshTokenException.class, HttpStatus.UNAUTHORIZED),
+            Map.entry(SessionException.class, HttpStatus.UNPROCESSABLE_CONTENT),
+            Map.entry(InvalidSessionException.class, HttpStatus.UNAUTHORIZED));
 
     private final MessageSource messageSource;
 
@@ -93,6 +95,18 @@ public class GlobalExceptionHandler {
         List<ExtraFieldErrorResponse> extraFields = List.of(new ExtraFieldErrorResponse("body", "INVALID_FORMAT"));
         logger.warn(
                 "GlobalExceptionHandler.handleUnreadableRequest - Request body could not be read {}",
+                Map.of("extra_fields", extraFields)
+        );
+        return build(HttpStatus.BAD_REQUEST, "error.bad_request", "GEN00400", extraFields);
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ErrorResponse> handleMissingHeader(MissingRequestHeaderException ex) {
+        List<ExtraFieldErrorResponse> extraFields = List.of(
+                new ExtraFieldErrorResponse(ex.getHeaderName(), "REQUIRED")
+        );
+        logger.warn(
+                "GlobalExceptionHandler.handleMissingHeader - Required header is missing {}",
                 Map.of("extra_fields", extraFields)
         );
         return build(HttpStatus.BAD_REQUEST, "error.bad_request", "GEN00400", extraFields);

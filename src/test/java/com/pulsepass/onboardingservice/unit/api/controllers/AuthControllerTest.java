@@ -1,11 +1,13 @@
 package com.pulsepass.onboardingservice.unit.api.controllers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -16,11 +18,16 @@ import com.pulsepass.onboardingservice.api.exceptions.GlobalExceptionHandler;
 import com.pulsepass.onboardingservice.application.dtos.input.CreateSessionDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.DeleteSessionDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.RefreshSessionDTO;
+import com.pulsepass.onboardingservice.application.dtos.output.SessionPersonDTO;
 import com.pulsepass.onboardingservice.application.services.AuthService;
+import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
+import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidSessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.SessionOutputDTO;
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -46,6 +53,7 @@ class AuthControllerTest {
     private static final String LOGIN_URL = "/onboarding/auth/login";
     private static final String REFRESH_URL = "/onboarding/auth/refresh";
     private static final String LOGOUT_URL = "/onboarding/auth/logout";
+    private static final String ME_URL = "/onboarding/auth/me";
     private static final String LOGIN_BODY = "{\"document_number\": \"52998224725\", \"password\": \"Secret123\"}";
     private static final String TOKEN_BODY = "{\"refresh_token\": \"refresh-token\"}";
     private static final SessionOutputDTO SESSION =
@@ -172,5 +180,75 @@ class AuthControllerTest {
         mockMvc.perform(post(LOGOUT_URL).contentType(MediaType.APPLICATION_JSON).content(TOKEN_BODY))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("GEN00401"));
+    }
+
+    @Test
+    void getSession_organizerHeaders_returns200WithLegalPerson() throws Exception {
+        var owner = new Person("person-key", null, "52998224725", "Bianca Torres", "b@mail.com");
+        var company = new Person("legal-person-key", null, "12345678000195", "Lenha Ltda", "l@mail.com");
+        when(authService.getSession(any(), any(), any()))
+                .thenReturn(new SessionPersonDTO(owner, List.of("organizer"), new LegalPerson(company)));
+
+        mockMvc.perform(get(ME_URL)
+                        .header("selected-user-key", "person-key")
+                        .header("selected-agent-key", "legal-person-key")
+                        .header("selected-user-roles", "organizer"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.person_key").value("person-key"))
+                .andExpect(jsonPath("$.name").value("Bianca Torres"))
+                .andExpect(jsonPath("$.document_number").value("52998224725"))
+                .andExpect(jsonPath("$.roles[0]").value("organizer"))
+                .andExpect(jsonPath("$.legal_person.legal_person_key").value("legal-person-key"))
+                .andExpect(jsonPath("$.legal_person.name").value("Lenha Ltda"));
+
+        verify(authService).getSession("person-key", "legal-person-key", "organizer");
+    }
+
+    @Test
+    void getSession_adminWithoutAgentHeader_returns200WithNullLegalPerson() throws Exception {
+        var admin = new Person("admin-key", null, "52998224725", "Admin", "a@mail.com");
+        when(authService.getSession(any(), any(), any()))
+                .thenReturn(new SessionPersonDTO(admin, List.of("admin"), null));
+
+        mockMvc.perform(get(ME_URL)
+                        .header("selected-user-key", "admin-key")
+                        .header("selected-user-roles", "admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roles[0]").value("admin"))
+                .andExpect(jsonPath("$.legal_person").value(nullValue()));
+
+        verify(authService).getSession("admin-key", null, "admin");
+    }
+
+    @Test
+    void getSession_missingUserKeyHeader_returns400WithHeaderField() throws Exception {
+        mockMvc.perform(get(ME_URL).header("selected-user-roles", "organizer"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("GEN00400"))
+                .andExpect(jsonPath("$.extra_fields[0].field").value("selected-user-key"))
+                .andExpect(jsonPath("$.extra_fields[0].error").value("REQUIRED"));
+
+        verifyNoInteractions(authService);
+    }
+
+    @Test
+    void getSession_missingRolesHeader_returns400WithHeaderField() throws Exception {
+        mockMvc.perform(get(ME_URL).header("selected-user-key", "person-key"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.extra_fields[0].field").value("selected-user-roles"));
+
+        verifyNoInteractions(authService);
+    }
+
+    @Test
+    void getSession_serviceThrowsInvalidSession_returns401() throws Exception {
+        when(authService.getSession(any(), any(), any())).thenThrow(new InvalidSessionException());
+
+        mockMvc.perform(get(ME_URL)
+                        .header("selected-user-key", "person-key")
+                        .header("selected-user-roles", "organizer"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("GEN00401"))
+                .andExpect(jsonPath("$.message").value("Your session has expired. Please sign in again."));
     }
 }

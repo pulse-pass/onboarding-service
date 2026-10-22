@@ -25,4 +25,9 @@ public class PersonRepositoryImpl implements PersonRepository {
     public Optional<Person> findByDocumentNumber(String documentNumber) {
         return jpaRepository.findByDocumentNumber(documentNumber).map(PersonEntity::toDomain);
     }
+
+    @Override
+    public Optional<Person> findByPersonKey(String personKey) {
+        return jpaRepository.findByPersonKey(personKey).map(PersonEntity::toDomain);
+    }
 }

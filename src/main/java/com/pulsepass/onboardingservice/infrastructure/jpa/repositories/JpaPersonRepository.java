@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface JpaPersonRepository extends JpaRepository<PersonEntity, Long> {
 
     Optional<PersonEntity> findByDocumentNumber(String documentNumber);
+
+    Optional<PersonEntity> findByPersonKey(String personKey);
 }

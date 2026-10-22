@@ -62,4 +62,22 @@ class PersonRepositoryImplTest {
 
         assertThat(repository.findByDocumentNumber("12345678000195")).isEmpty();
     }
+
+    @Test
+    void findByPersonKey_existing_returnsMappedDomain() {
+        var person = new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
+                "12345678000195", "Acme", "acme@mail.com", NOW, NOW);
+        when(jpaRepository.findByPersonKey("person-key"))
+                .thenReturn(Optional.of(PersonEntity.fromDomain(person)));
+
+        assertThat(repository.findByPersonKey("person-key")).get()
+                .extracting(Person::getDocumentNumber).isEqualTo("12345678000195");
+    }
+
+    @Test
+    void findByPersonKey_missing_returnsEmpty() {
+        when(jpaRepository.findByPersonKey("person-key")).thenReturn(Optional.empty());
+
+        assertThat(repository.findByPersonKey("person-key")).isEmpty();
+    }
 }
