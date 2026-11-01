@@ -4,7 +4,7 @@ import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
 import com.pulsepass.onboardingservice.domain.entities.Person;
 import java.util.List;
 
-public record SessionPersonDTO(
+public record GetSessionDTO(
         Person person,
         List<String> roles,
         LegalPerson legalPerson

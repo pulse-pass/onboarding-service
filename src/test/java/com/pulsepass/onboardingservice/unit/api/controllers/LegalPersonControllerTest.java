@@ -2,25 +2,32 @@ package com.pulsepass.onboardingservice.unit.api.controllers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.pulsepass.onboardingservice.api.controllers.LegalPersonController;
 import com.pulsepass.onboardingservice.api.exceptions.GlobalExceptionHandler;
+import com.pulsepass.onboardingservice.api.validators.InternalRequestValidator;
 import com.pulsepass.onboardingservice.application.dtos.input.CreateLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.LegalPersonCollaboratorDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.PersonPhoneNumberDTO;
+import com.pulsepass.onboardingservice.application.dtos.output.GetLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.services.LegalPersonService;
 import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
 import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.entities.PersonType;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
+import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundException;
+import com.pulsepass.onboardingservice.domain.exceptions.MissingSelectedAgentKeyException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -52,6 +59,9 @@ class LegalPersonControllerTest {
 
     @MockitoBean
     private LegalPersonService legalPersonService;
+
+    @MockitoBean
+    private InternalRequestValidator internalRequestValidator;
 
     private static String body(String cnpj, String role, String cpf, String password) {
         return """
@@ -161,6 +171,60 @@ class LegalPersonControllerTest {
     }
 
     @Test
+    void getLegalPerson_ownKey_returns200WithSnakeCaseBody() throws Exception {
+        var createdAt = LocalDateTime.of(2026, 10, 9, 14, 12);
+        var company = new Person(1L, "legal-key", new PersonType(1L, "LEGAL", null),
+                "12345678000195", "Acme Events", "acme@mail.com", createdAt, createdAt);
+        var owner = new Person("owner-key", new PersonType(2L, "NATURAL", null),
+                "52998224725", "John Doe", "john@mail.com");
+        when(legalPersonService.getLegalPerson("legal-key", "legal-key")).thenReturn(
+                new GetLegalPersonDTO(company, owner));
+
+        mockMvc.perform(get(URL + "/legal-key").header("selected-agent-key", "legal-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.legal_person_key").value("legal-key"))
+                .andExpect(jsonPath("$.name").value("Acme Events"))
+                .andExpect(jsonPath("$.document_number").value("12345678000195"))
+                .andExpect(jsonPath("$.email").value("acme@mail.com"))
+                .andExpect(jsonPath("$.created_at").value("2026-10-09T14:12:00"))
+                .andExpect(jsonPath("$.owner.person_key").value("owner-key"))
+                .andExpect(jsonPath("$.owner.name").value("John Doe"))
+                .andExpect(jsonPath("$.owner.document_number").value("52998224725"))
+                .andExpect(jsonPath("$.owner.email").value("john@mail.com"));
+
+        verify(internalRequestValidator).validateSelectedAgentKey("legal-key");
+    }
+
+    @Test
+    void getLegalPerson_serviceThrowsNotFound_returns404WithOnb00009() throws Exception {
+        when(legalPersonService.getLegalPerson("legal-key", "other-key")).thenThrow(new LegalPersonNotFoundException());
+
+        mockMvc.perform(get(URL + "/legal-key").header("selected-agent-key", "other-key"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ONB00009"));
+    }
+
+    @Test
+    void getLegalPerson_validatorThrows_returns401AndSkipsService() throws Exception {
+        doThrow(new MissingSelectedAgentKeyException()).when(internalRequestValidator).validateSelectedAgentKey(null);
+
+        mockMvc.perform(get(URL + "/legal-key"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("GEN00401"));
+
+        verifyNoInteractions(legalPersonService);
+    }
+
+    @Test
+    void getLegalPerson_nonUuidKey_reachesServiceAndReturns404() throws Exception {
+        when(legalPersonService.getLegalPerson("abc", "legal-key")).thenThrow(new LegalPersonNotFoundException());
+
+        mockMvc.perform(get(URL + "/abc").header("selected-agent-key", "legal-key"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ONB00009"));
+    }
+
+    @Test
     void unknownRoute_returns404WithGen00404() throws Exception {
         mockMvc.perform(get("/unknown_route"))
                 .andExpect(status().isNotFound())
@@ -169,8 +233,8 @@ class LegalPersonControllerTest {
     }
 
     @Test
-    void createRoute_withGet_returns405WithGen00405() throws Exception {
-        mockMvc.perform(get(URL))
+    void createRoute_withPut_returns405WithGen00405() throws Exception {
+        mockMvc.perform(put(URL))
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("$.code").value("GEN00405"))
                 .andExpect(jsonPath("$.title").value("Method Not Allowed"));

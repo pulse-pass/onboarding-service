@@ -2,7 +2,7 @@ package com.pulsepass.onboardingservice.api.responses;
 
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.SessionOutputDTO;
 
-public record SessionResponse(
+public record CreateSessionResponse(
         String accessToken,
         long expiresIn,
         String refreshToken,
@@ -10,8 +10,8 @@ public record SessionResponse(
         String tokenType
 ) {
 
-    public static SessionResponse fromSessionOutput(SessionOutputDTO session) {
-        return new SessionResponse(
+    public static CreateSessionResponse fromSessionOutput(SessionOutputDTO session) {
+        return new CreateSessionResponse(
                 session.accessToken(),
                 session.expiresIn(),
                 session.refreshToken(),

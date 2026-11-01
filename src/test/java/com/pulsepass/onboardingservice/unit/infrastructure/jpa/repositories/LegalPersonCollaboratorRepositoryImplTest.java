@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pulsepass.onboardingservice.domain.entities.CollaboratorRole;
+import com.pulsepass.onboardingservice.domain.entities.CollaboratorRoleEnum;
 import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaborator;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorStatus;
@@ -17,6 +18,7 @@ import com.pulsepass.onboardingservice.infrastructure.jpa.entities.LegalPersonCo
 import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.JpaLegalPersonCollaboratorRepository;
 import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.LegalPersonCollaboratorRepositoryImpl;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -67,5 +69,29 @@ class LegalPersonCollaboratorRepositoryImplTest {
                 "legal-key", "natural-key")).thenReturn(false);
 
         assertThat(repository.existsByLegalPersonKeyAndNaturalPersonKey("legal-key", "natural-key")).isFalse();
+    }
+
+    @Test
+    void findByLegalPersonKeyAndRole_match_returnsMappedDomain() {
+        var legal = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
+                "12345678000195", "Acme", "acme@mail.com", NOW, NOW), NOW, NOW);
+        var natural = new NaturalPerson(2L, new Person(2L, "owner-key", new PersonType(2L, "NATURAL", NOW),
+                "52998224725", "John Doe", "john@mail.com", NOW, NOW), NOW, NOW);
+        var domain = new LegalPersonCollaborator(4L, "collab-key", legal, natural,
+                new CollaboratorRole(1L, "OWNER", NOW), new LegalPersonCollaboratorStatus(1L, "ACTIVE", NOW), NOW, NOW);
+        when(jpaRepository.findByLegalPersonPersonPersonKeyAndCollaboratorRoleEnumerator("person-key", "OWNER"))
+                .thenReturn(Optional.of(LegalPersonCollaboratorEntity.fromDomain(domain)));
+
+        var result = repository.findByLegalPersonKeyAndRole("person-key", CollaboratorRoleEnum.OWNER);
+
+        assertThat(result).get().usingRecursiveComparison().isEqualTo(domain);
+    }
+
+    @Test
+    void findByLegalPersonKeyAndRole_noMatch_returnsEmpty() {
+        when(jpaRepository.findByLegalPersonPersonPersonKeyAndCollaboratorRoleEnumerator("person-key", "OWNER"))
+                .thenReturn(Optional.empty());
+
+        assertThat(repository.findByLegalPersonKeyAndRole("person-key", CollaboratorRoleEnum.OWNER)).isEmpty();
     }
 }
