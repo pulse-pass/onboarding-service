@@ -7,9 +7,9 @@ import com.pulsepass.onboardingservice.domain.exceptions.InvalidLegalPersonDocum
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidNaturalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidSessionException;
-import com.pulsepass.onboardingservice.domain.exceptions.MissingSelectedAgentKeyException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundException;
+import com.pulsepass.onboardingservice.domain.exceptions.MissingSelectedAgentKeyException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
 import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
