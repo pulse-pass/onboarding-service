@@ -2,6 +2,7 @@ package com.pulsepass.onboardingservice.application.services;
 
 import com.pulsepass.onboardingservice.application.dtos.input.CreateLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.LegalPersonCollaboratorDTO;
+import com.pulsepass.onboardingservice.application.dtos.output.GetLegalPersonDTO;
 import com.pulsepass.onboardingservice.common.DocumentHandlers;
 import com.pulsepass.onboardingservice.domain.UnitOfWork;
 import com.pulsepass.onboardingservice.domain.entities.CollaboratorRole;
@@ -20,6 +21,7 @@ import com.pulsepass.onboardingservice.domain.exceptions.InvalidCollaboratorRole
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidLegalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidNaturalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
+import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
@@ -238,5 +240,24 @@ public class LegalPersonService {
 
         logger.info("LegalPersonService.createLegalPerson - Successfully finished");
         return legalPerson;
+    }
+
+    public GetLegalPersonDTO getLegalPerson(String legalPersonKey, String selectedAgentKey) {
+        logger.info("LegalPersonService.getLegalPerson - Starting");
+
+        if (!legalPersonKey.equals(selectedAgentKey)) {
+            logger.warn("LegalPersonService.getLegalPerson - Legal person key differs from the selected agent");
+            throw new LegalPersonNotFoundException();
+        }
+
+        LegalPerson legalPerson = legalPersonRepository
+                .findByPersonKey(legalPersonKey)
+                .orElseThrow(LegalPersonNotFoundException::new);
+        LegalPersonCollaborator ownerCollaborator = legalPersonCollaboratorRepository
+                .findByLegalPersonKeyAndRole(legalPersonKey, CollaboratorRoleEnum.OWNER)
+                .orElseThrow(() -> new IllegalStateException("Legal person owner not found"));
+
+        logger.info("LegalPersonService.getLegalPerson - Successfully finished");
+        return new GetLegalPersonDTO(legalPerson.getPerson(), ownerCollaborator.getNaturalPerson().getPerson());
     }
 }

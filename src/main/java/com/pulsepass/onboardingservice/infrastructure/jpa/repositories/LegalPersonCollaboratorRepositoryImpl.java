@@ -1,8 +1,10 @@
 package com.pulsepass.onboardingservice.infrastructure.jpa.repositories;
 
+import com.pulsepass.onboardingservice.domain.entities.CollaboratorRoleEnum;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaborator;
 import com.pulsepass.onboardingservice.domain.repositories.LegalPersonCollaboratorRepository;
 import com.pulsepass.onboardingservice.infrastructure.jpa.entities.LegalPersonCollaboratorEntity;
+import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -18,6 +20,16 @@ public class LegalPersonCollaboratorRepositoryImpl implements LegalPersonCollabo
     public LegalPersonCollaborator save(LegalPersonCollaborator legalPersonCollaborator) {
         var saved = jpaRepository.save(LegalPersonCollaboratorEntity.fromDomain(legalPersonCollaborator));
         return saved.toDomain();
+    }
+
+    @Override
+    public Optional<LegalPersonCollaborator> findByLegalPersonKeyAndRole(
+            String legalPersonKey,
+            CollaboratorRoleEnum role
+    ) {
+        return jpaRepository
+                .findByLegalPersonPersonPersonKeyAndCollaboratorRoleEnumerator(legalPersonKey, role.name())
+                .map(LegalPersonCollaboratorEntity::toDomain);
     }
 
     @Override

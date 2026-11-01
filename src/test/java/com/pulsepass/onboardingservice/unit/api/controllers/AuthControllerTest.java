@@ -18,7 +18,7 @@ import com.pulsepass.onboardingservice.api.exceptions.GlobalExceptionHandler;
 import com.pulsepass.onboardingservice.application.dtos.input.CreateSessionDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.DeleteSessionDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.RefreshSessionDTO;
-import com.pulsepass.onboardingservice.application.dtos.output.SessionPersonDTO;
+import com.pulsepass.onboardingservice.application.dtos.output.GetSessionDTO;
 import com.pulsepass.onboardingservice.application.services.AuthService;
 import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
 import com.pulsepass.onboardingservice.domain.entities.Person;
@@ -187,7 +187,7 @@ class AuthControllerTest {
         var owner = new Person("person-key", null, "52998224725", "Bianca Torres", "b@mail.com");
         var company = new Person("legal-person-key", null, "12345678000195", "Lenha Ltda", "l@mail.com");
         when(authService.getSession(any(), any(), any()))
-                .thenReturn(new SessionPersonDTO(owner, List.of("organizer"), new LegalPerson(company)));
+                .thenReturn(new GetSessionDTO(owner, List.of("organizer"), new LegalPerson(company)));
 
         mockMvc.perform(get(ME_URL)
                         .header("selected-user-key", "person-key")
@@ -208,7 +208,7 @@ class AuthControllerTest {
     void getSession_adminWithoutAgentHeader_returns200WithNullLegalPerson() throws Exception {
         var admin = new Person("admin-key", null, "52998224725", "Admin", "a@mail.com");
         when(authService.getSession(any(), any(), any()))
-                .thenReturn(new SessionPersonDTO(admin, List.of("admin"), null));
+                .thenReturn(new GetSessionDTO(admin, List.of("admin"), null));
 
         mockMvc.perform(get(ME_URL)
                         .header("selected-user-key", "admin-key")

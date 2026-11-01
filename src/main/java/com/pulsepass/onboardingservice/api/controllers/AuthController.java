@@ -1,7 +1,7 @@
 package com.pulsepass.onboardingservice.api.controllers;
 
-import com.pulsepass.onboardingservice.api.responses.SessionPersonResponse;
-import com.pulsepass.onboardingservice.api.responses.SessionResponse;
+import com.pulsepass.onboardingservice.api.responses.CreateSessionResponse;
+import com.pulsepass.onboardingservice.api.responses.GetSessionResponse;
 import com.pulsepass.onboardingservice.api.schemas.CreateSessionSchema;
 import com.pulsepass.onboardingservice.api.schemas.DeleteSessionSchema;
 import com.pulsepass.onboardingservice.api.schemas.RefreshSessionSchema;
@@ -24,15 +24,15 @@ public class AuthController {
     }
 
     @PostMapping("/onboarding/auth/login")
-    public ResponseEntity<SessionResponse> createSession(@Valid @RequestBody CreateSessionSchema request) {
+    public ResponseEntity<CreateSessionResponse> createSession(@Valid @RequestBody CreateSessionSchema request) {
         var session = authService.createSession(request.toDTO());
-        return ResponseEntity.ok(SessionResponse.fromSessionOutput(session));
+        return ResponseEntity.ok(CreateSessionResponse.fromSessionOutput(session));
     }
 
     @PostMapping("/onboarding/auth/refresh")
-    public ResponseEntity<SessionResponse> refreshSession(@Valid @RequestBody RefreshSessionSchema request) {
+    public ResponseEntity<CreateSessionResponse> refreshSession(@Valid @RequestBody RefreshSessionSchema request) {
         var session = authService.refreshSession(request.toDTO());
-        return ResponseEntity.ok(SessionResponse.fromSessionOutput(session));
+        return ResponseEntity.ok(CreateSessionResponse.fromSessionOutput(session));
     }
 
     @PostMapping("/onboarding/auth/logout")
@@ -42,12 +42,12 @@ public class AuthController {
     }
 
     @GetMapping("/onboarding/auth/me")
-    public ResponseEntity<SessionPersonResponse> getSession(
+    public ResponseEntity<GetSessionResponse> getSession(
             @RequestHeader("selected-user-key") String selectedUserKey,
             @RequestHeader(value = "selected-agent-key", required = false) String selectedAgentKey,
             @RequestHeader("selected-user-roles") String selectedUserRoles
     ) {
         var session = authService.getSession(selectedUserKey, selectedAgentKey, selectedUserRoles);
-        return ResponseEntity.ok(SessionPersonResponse.fromDTO(session));
+        return ResponseEntity.ok(GetSessionResponse.fromDTO(session));
     }
 }

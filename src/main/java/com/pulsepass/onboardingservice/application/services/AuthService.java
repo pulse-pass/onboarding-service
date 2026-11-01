@@ -3,7 +3,7 @@ package com.pulsepass.onboardingservice.application.services;
 import com.pulsepass.onboardingservice.application.dtos.input.CreateSessionDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.DeleteSessionDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.RefreshSessionDTO;
-import com.pulsepass.onboardingservice.application.dtos.output.SessionPersonDTO;
+import com.pulsepass.onboardingservice.application.dtos.output.GetSessionDTO;
 import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidSessionException;
@@ -73,7 +73,7 @@ public class AuthService {
         logger.info("AuthService.deleteSession - Successfully finished");
     }
 
-    public SessionPersonDTO getSession(String personKey, String legalPersonKey, String roles) {
+    public GetSessionDTO getSession(String personKey, String legalPersonKey, String roles) {
         logger.info("AuthService.getSession - Starting {}", Map.of("person_key", personKey));
 
         var person = personRepository.findByPersonKey(personKey).orElseThrow(() -> {
@@ -103,6 +103,6 @@ public class AuthService {
         }
 
         logger.info("AuthService.getSession - Successfully finished {}", Map.of("person_key", personKey));
-        return new SessionPersonDTO(person, Arrays.asList(roles.split(",")), legalPerson);
+        return new GetSessionDTO(person, Arrays.asList(roles.split(",")), legalPerson);
     }
 }

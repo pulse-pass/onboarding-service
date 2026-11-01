@@ -8,6 +8,8 @@ import com.pulsepass.onboardingservice.domain.exceptions.InvalidNaturalPersonDoc
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidSessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
+import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundException;
+import com.pulsepass.onboardingservice.domain.exceptions.MissingSelectedAgentKeyException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
 import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
@@ -45,7 +47,9 @@ public class GlobalExceptionHandler {
             Map.entry(InvalidCredentialsException.class, HttpStatus.UNAUTHORIZED),
             Map.entry(InvalidRefreshTokenException.class, HttpStatus.UNAUTHORIZED),
             Map.entry(SessionException.class, HttpStatus.UNPROCESSABLE_CONTENT),
-            Map.entry(InvalidSessionException.class, HttpStatus.UNAUTHORIZED));
+            Map.entry(InvalidSessionException.class, HttpStatus.UNAUTHORIZED),
+            Map.entry(LegalPersonNotFoundException.class, HttpStatus.NOT_FOUND),
+            Map.entry(MissingSelectedAgentKeyException.class, HttpStatus.UNAUTHORIZED));
 
     private final MessageSource messageSource;
 

@@ -14,9 +14,11 @@ import static org.mockito.Mockito.when;
 import com.pulsepass.onboardingservice.application.dtos.input.CreateLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.LegalPersonCollaboratorDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.PersonPhoneNumberDTO;
+import com.pulsepass.onboardingservice.application.dtos.output.GetLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.services.LegalPersonService;
 import com.pulsepass.onboardingservice.domain.UnitOfWork;
 import com.pulsepass.onboardingservice.domain.entities.CollaboratorRole;
+import com.pulsepass.onboardingservice.domain.entities.CollaboratorRoleEnum;
 import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaborator;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorHistory;
@@ -29,6 +31,7 @@ import com.pulsepass.onboardingservice.domain.exceptions.InvalidCollaboratorRole
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidLegalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidNaturalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
+import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
@@ -412,5 +415,51 @@ class LegalPersonServiceTest {
 
         verify(unitOfWork).commit();
         verify(identityProviderGateway).createUser(any(CreateUserInputDTO.class));
+    }
+
+    @Test
+    void getLegalPerson_ownKey_returnsCompanyWithOwner() {
+        var company = new Person("legal-1", legalType, "12345678000195", "One", "one@mail.com");
+        var owner = new Person("owner-1", naturalType, "52998224725", "Owner One", "o1@mail.com");
+        var ownerCollaborator = new LegalPersonCollaborator(
+                "c-1", new LegalPerson(company), new NaturalPerson(owner), ownerRole, activeStatus
+        );
+        when(legalPersonRepository.findByPersonKey("legal-1")).thenReturn(Optional.of(new LegalPerson(company)));
+        when(legalPersonCollaboratorRepository.findByLegalPersonKeyAndRole("legal-1", CollaboratorRoleEnum.OWNER))
+                .thenReturn(Optional.of(ownerCollaborator));
+
+        GetLegalPersonDTO result = service.getLegalPerson("legal-1", "legal-1");
+
+        assertThat(result).isEqualTo(new GetLegalPersonDTO(company, owner));
+    }
+
+    @Test
+    void getLegalPerson_ownerMissing_throwsIllegalState() {
+        var company = new Person("legal-1", legalType, "12345678000195", "One", "one@mail.com");
+        when(legalPersonRepository.findByPersonKey("legal-1")).thenReturn(Optional.of(new LegalPerson(company)));
+        when(legalPersonCollaboratorRepository.findByLegalPersonKeyAndRole("legal-1", CollaboratorRoleEnum.OWNER))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getLegalPerson("legal-1", "legal-1"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void getLegalPerson_keyDifferentFromSelectedAgent_throwsNotFoundWithoutQuerying() {
+        assertThatThrownBy(() -> service.getLegalPerson("legal-1", "legal-2"))
+                .isInstanceOf(LegalPersonNotFoundException.class);
+
+        verifyNoInteractions(legalPersonRepository);
+        verifyNoInteractions(legalPersonCollaboratorRepository);
+    }
+
+    @Test
+    void getLegalPerson_unknownKey_throwsNotFound() {
+        when(legalPersonRepository.findByPersonKey("legal-1")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getLegalPerson("legal-1", "legal-1"))
+                .isInstanceOf(LegalPersonNotFoundException.class);
+
+        verify(legalPersonCollaboratorRepository, never()).findByLegalPersonKeyAndRole(any(), any());
     }
 }

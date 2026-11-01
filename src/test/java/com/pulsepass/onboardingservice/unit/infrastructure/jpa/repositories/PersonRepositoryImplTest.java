@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.entities.PersonType;
 import com.pulsepass.onboardingservice.infrastructure.jpa.entities.PersonEntity;
-import com.pulsepass.onboardingservice.infrastructure.jpa.entities.PersonEntity;
 import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.JpaPersonRepository;
 import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.PersonRepositoryImpl;
 import java.time.LocalDateTime;
