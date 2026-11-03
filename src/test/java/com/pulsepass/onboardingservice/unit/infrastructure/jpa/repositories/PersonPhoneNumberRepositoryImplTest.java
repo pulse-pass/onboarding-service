@@ -13,6 +13,7 @@ import com.pulsepass.onboardingservice.infrastructure.jpa.entities.PersonPhoneNu
 import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.JpaPersonPhoneNumberRepository;
 import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.PersonPhoneNumberRepositoryImpl;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -43,5 +44,28 @@ class PersonPhoneNumberRepositoryImplTest {
         verify(jpaRepository).save(captor.capture());
         assertThat(captor.getValue().toDomain()).usingRecursiveComparison().isEqualTo(domain);
         assertThat(saved).usingRecursiveComparison().isEqualTo(domain);
+    }
+
+    @Test
+    void findAllByPersonKey_existingPhones_returnsMappedDomains() {
+        var person = new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
+                "12345678000195", "Acme", "acme@mail.com", NOW, NOW);
+        var first = new PersonPhoneNumber(5L, "phone-1", person, "55", "11", "999999999", NOW, NOW);
+        var second = new PersonPhoneNumber(6L, "phone-2", person, "55", "51", "30224180", NOW, NOW);
+        when(jpaRepository.findAllByPersonPersonKeyOrderByIdAsc("person-key")).thenReturn(List.of(
+                PersonPhoneNumberEntity.fromDomain(first),
+                PersonPhoneNumberEntity.fromDomain(second)
+        ));
+
+        var result = repository.findAllByPersonKey("person-key");
+
+        assertThat(result).usingRecursiveComparison().isEqualTo(List.of(first, second));
+    }
+
+    @Test
+    void findAllByPersonKey_noPhones_returnsEmptyList() {
+        when(jpaRepository.findAllByPersonPersonKeyOrderByIdAsc("person-key")).thenReturn(List.of());
+
+        assertThat(repository.findAllByPersonKey("person-key")).isEmpty();
     }
 }

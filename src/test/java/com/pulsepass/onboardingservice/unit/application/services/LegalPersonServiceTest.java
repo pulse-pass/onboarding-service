@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import com.pulsepass.onboardingservice.application.dtos.input.CreateLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.LegalPersonCollaboratorDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.PersonPhoneNumberDTO;
+import com.pulsepass.onboardingservice.application.dtos.output.GetInternalLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.dtos.output.GetLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.services.LegalPersonService;
 import com.pulsepass.onboardingservice.domain.UnitOfWork;
@@ -461,5 +462,45 @@ class LegalPersonServiceTest {
                 .isInstanceOf(LegalPersonNotFoundException.class);
 
         verify(legalPersonCollaboratorRepository, never()).findByLegalPersonKeyAndRole(any(), any());
+    }
+
+    @Test
+    void getInternalLegalPerson_existingKey_returnsCompanyOwnerAndPhones() {
+        var company = new Person("legal-1", legalType, "12345678000195", "One", "one@mail.com");
+        var owner = new Person("owner-1", naturalType, "52998224725", "Owner One", "o1@mail.com");
+        var ownerCollaborator = new LegalPersonCollaborator(
+                "c-1", new LegalPerson(company), new NaturalPerson(owner), ownerRole, activeStatus
+        );
+        var phoneNumbers = List.of(new PersonPhoneNumber("phone-1", company, "55", "51", "30224180"));
+        when(legalPersonRepository.findByPersonKey("legal-1")).thenReturn(Optional.of(new LegalPerson(company)));
+        when(legalPersonCollaboratorRepository.findByLegalPersonKeyAndRole("legal-1", CollaboratorRoleEnum.OWNER))
+                .thenReturn(Optional.of(ownerCollaborator));
+        when(personPhoneNumberRepository.findAllByPersonKey("legal-1")).thenReturn(phoneNumbers);
+
+        GetInternalLegalPersonDTO result = service.getInternalLegalPerson("legal-1");
+
+        assertThat(result).isEqualTo(new GetInternalLegalPersonDTO(company, owner, phoneNumbers));
+    }
+
+    @Test
+    void getInternalLegalPerson_unknownKey_throwsNotFoundWithoutQueryingOwnerOrPhones() {
+        when(legalPersonRepository.findByPersonKey("legal-1")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getInternalLegalPerson("legal-1"))
+                .isInstanceOf(LegalPersonNotFoundException.class);
+
+        verify(legalPersonCollaboratorRepository, never()).findByLegalPersonKeyAndRole(any(), any());
+        verify(personPhoneNumberRepository, never()).findAllByPersonKey(any());
+    }
+
+    @Test
+    void getInternalLegalPerson_ownerMissing_throwsIllegalState() {
+        var company = new Person("legal-1", legalType, "12345678000195", "One", "one@mail.com");
+        when(legalPersonRepository.findByPersonKey("legal-1")).thenReturn(Optional.of(new LegalPerson(company)));
+        when(legalPersonCollaboratorRepository.findByLegalPersonKeyAndRole("legal-1", CollaboratorRoleEnum.OWNER))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getInternalLegalPerson("legal-1"))
+                .isInstanceOf(IllegalStateException.class);
     }
 }

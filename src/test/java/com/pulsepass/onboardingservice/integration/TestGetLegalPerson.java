@@ -32,7 +32,7 @@ class TestGetLegalPerson extends BaseIntegrationTest {
         assertThat(response.jsonPath().getString("name")).isEqualTo("Lenha Produções Artísticas Ltda");
         assertThat(response.jsonPath().getString("document_number")).hasSize(14);
         assertThat(response.jsonPath().getString("email")).isEqualTo("contato@lenha.com.br");
-        assertThat(response.jsonPath().getString("created_at")).isNotBlank();
+        assertThat(response.jsonPath().getString("created_at")).endsWith("Z");
         assertThat(response.jsonPath().getString("owner.person_key")).isNotBlank();
         assertThat(response.jsonPath().getString("owner.name")).isEqualTo("Bianca Torres");
         assertThat(response.jsonPath().getString("owner.document_number")).isEqualTo(ownerCpf);

@@ -2,6 +2,7 @@ package com.pulsepass.onboardingservice.application.services;
 
 import com.pulsepass.onboardingservice.application.dtos.input.CreateLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.LegalPersonCollaboratorDTO;
+import com.pulsepass.onboardingservice.application.dtos.output.GetInternalLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.dtos.output.GetLegalPersonDTO;
 import com.pulsepass.onboardingservice.common.DocumentHandlers;
 import com.pulsepass.onboardingservice.domain.UnitOfWork;
@@ -259,5 +260,24 @@ public class LegalPersonService {
 
         logger.info("LegalPersonService.getLegalPerson - Successfully finished");
         return new GetLegalPersonDTO(legalPerson.getPerson(), ownerCollaborator.getNaturalPerson().getPerson());
+    }
+
+    public GetInternalLegalPersonDTO getInternalLegalPerson(String legalPersonKey) {
+        logger.info("LegalPersonService.getInternalLegalPerson - Starting");
+
+        LegalPerson legalPerson = legalPersonRepository
+                .findByPersonKey(legalPersonKey)
+                .orElseThrow(LegalPersonNotFoundException::new);
+        LegalPersonCollaborator ownerCollaborator = legalPersonCollaboratorRepository
+                .findByLegalPersonKeyAndRole(legalPersonKey, CollaboratorRoleEnum.OWNER)
+                .orElseThrow(() -> new IllegalStateException("Legal person owner not found"));
+        List<PersonPhoneNumber> phoneNumbers = personPhoneNumberRepository.findAllByPersonKey(legalPersonKey);
+
+        logger.info("LegalPersonService.getInternalLegalPerson - Successfully finished");
+        return new GetInternalLegalPersonDTO(
+                legalPerson.getPerson(),
+                ownerCollaborator.getNaturalPerson().getPerson(),
+                phoneNumbers
+        );
     }
 }
