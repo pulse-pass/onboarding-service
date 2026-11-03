@@ -6,6 +6,7 @@ import com.pulsepass.onboardingservice.api.responses.GetLegalPersonResponse;
 import com.pulsepass.onboardingservice.application.dtos.output.GetLegalPersonDTO;
 import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
 import com.pulsepass.onboardingservice.domain.entities.Person;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +27,7 @@ class GetLegalPersonResponseTest {
         assertThat(response.name()).isEqualTo("Acme");
         assertThat(response.documentNumber()).isEqualTo("12345678000195");
         assertThat(response.email()).isEqualTo("acme@mail.com");
-        assertThat(response.createdAt()).isEqualTo(createdAt);
+        assertThat(response.createdAt()).isEqualTo(Instant.parse("2026-10-09T14:12:00Z"));
         assertThat(response.owner().personKey()).isEqualTo("owner-key");
         assertThat(response.owner().name()).isEqualTo("John Doe");
     }

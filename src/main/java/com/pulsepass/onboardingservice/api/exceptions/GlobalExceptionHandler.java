@@ -13,6 +13,7 @@ import com.pulsepass.onboardingservice.domain.exceptions.MissingSelectedAgentKey
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
 import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
+import com.pulsepass.onboardingservice.domain.exceptions.UnauthorizedInternalRequestException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,10 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -49,7 +53,8 @@ public class GlobalExceptionHandler {
             Map.entry(SessionException.class, HttpStatus.UNPROCESSABLE_CONTENT),
             Map.entry(InvalidSessionException.class, HttpStatus.UNAUTHORIZED),
             Map.entry(LegalPersonNotFoundException.class, HttpStatus.NOT_FOUND),
-            Map.entry(MissingSelectedAgentKeyException.class, HttpStatus.UNAUTHORIZED));
+            Map.entry(MissingSelectedAgentKeyException.class, HttpStatus.UNAUTHORIZED),
+            Map.entry(UnauthorizedInternalRequestException.class, HttpStatus.UNAUTHORIZED));
 
     private final MessageSource messageSource;
 
@@ -99,6 +104,33 @@ public class GlobalExceptionHandler {
         List<ExtraFieldErrorResponse> extraFields = List.of(new ExtraFieldErrorResponse("body", "INVALID_FORMAT"));
         logger.warn(
                 "GlobalExceptionHandler.handleUnreadableRequest - Request body could not be read {}",
+                Map.of("extra_fields", extraFields)
+        );
+        return build(HttpStatus.BAD_REQUEST, "error.bad_request", "GEN00400", extraFields);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidParameter(MethodArgumentTypeMismatchException ex) {
+        List<ExtraFieldErrorResponse> extraFields = List.of(
+                new ExtraFieldErrorResponse(ex.getName(), "INVALID_FORMAT")
+        );
+        logger.warn(
+                "GlobalExceptionHandler.handleInvalidParameter - Request parameter has an invalid format {}",
+                Map.of("extra_fields", extraFields)
+        );
+        return build(HttpStatus.BAD_REQUEST, "error.bad_request", "GEN00400", extraFields);
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidParameterValue(HandlerMethodValidationException ex) {
+        List<ExtraFieldErrorResponse> extraFields = ex.getParameterValidationResults().stream()
+                .flatMap(result -> result.getResolvableErrors().stream()
+                        .map(error -> ExtraFieldErrorResponse.fromParameterError(
+                                result.getMethodParameter().getParameterAnnotation(RequestParam.class).name(),
+                                error)))
+                .toList();
+        logger.warn(
+                "GlobalExceptionHandler.handleInvalidParameterValue - Request parameter has an invalid value {}",
                 Map.of("extra_fields", extraFields)
         );
         return build(HttpStatus.BAD_REQUEST, "error.bad_request", "GEN00400", extraFields);
