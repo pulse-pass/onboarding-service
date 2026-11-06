@@ -74,6 +74,13 @@ class PersonRepositoryImplTest {
     }
 
     @Test
+    void findByEmail_missing_returnsEmpty() {
+        when(jpaRepository.findByEmail("a@mail.com")).thenReturn(Optional.empty());
+
+        assertThat(repository.findByEmail("a@mail.com")).isEmpty();
+    }
+
+    @Test
     void findByPersonKey_missing_returnsEmpty() {
         when(jpaRepository.findByPersonKey("person-key")).thenReturn(Optional.empty());
 

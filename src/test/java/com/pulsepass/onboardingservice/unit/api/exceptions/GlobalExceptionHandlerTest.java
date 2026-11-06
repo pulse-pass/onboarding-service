@@ -19,6 +19,7 @@ import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundExce
 import com.pulsepass.onboardingservice.domain.exceptions.MissingSelectedAgentKeyException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
+import com.pulsepass.onboardingservice.domain.exceptions.PersonEmailAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.UnauthorizedInternalRequestException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
@@ -59,6 +60,7 @@ class GlobalExceptionHandlerTest {
         messages.addMessage("error.bad_request", Locale.ENGLISH, "bad request");
         messages.addMessage("error.legal_person.already_exists", Locale.ENGLISH, "cnpj exists");
         messages.addMessage("error.natural_person.already_exists", Locale.ENGLISH, "cpf exists");
+        messages.addMessage("error.person.email_already_exists", Locale.ENGLISH, "email exists");
         messages.addMessage("error.legal_person.not_found", Locale.ENGLISH, "company not found");
         messages.addMessage("error.legal_person.invalid_document", Locale.ENGLISH, "invalid cnpj");
         messages.addMessage("error.natural_person.invalid_document", Locale.ENGLISH, "invalid cpf");
@@ -100,6 +102,14 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).isEqualTo(new ErrorResponse("Conflict", "cpf exists", "ONB00002", List.of()));
+    }
+
+    @Test
+    void handleDomain_personEmailAlreadyExists_returns409WithOnb00010() {
+        var response = handler.handleDomain(new PersonEmailAlreadyExistsException());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody()).isEqualTo(new ErrorResponse("Conflict", "email exists", "ONB00010", List.of()));
     }
 
     @Test

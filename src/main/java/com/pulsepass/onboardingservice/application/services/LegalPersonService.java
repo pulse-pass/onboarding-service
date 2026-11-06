@@ -9,10 +9,13 @@ import com.pulsepass.onboardingservice.domain.UnitOfWork;
 import com.pulsepass.onboardingservice.domain.entities.CollaboratorRole;
 import com.pulsepass.onboardingservice.domain.entities.CollaboratorRoleEnum;
 import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonAddress;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaborator;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorHistory;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorStatus;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorStatusEnum;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonCompanyType;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonCompanyTypeEnum;
 import com.pulsepass.onboardingservice.domain.entities.NaturalPerson;
 import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.entities.PersonPhoneNumber;
@@ -25,6 +28,7 @@ import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExist
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
+import com.pulsepass.onboardingservice.domain.exceptions.PersonEmailAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.IdentityProviderGateway;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateUserInputDTO;
@@ -32,9 +36,11 @@ import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.Use
 import com.pulsepass.onboardingservice.domain.gateways.organization.OrganizationGateway;
 import com.pulsepass.onboardingservice.domain.gateways.organization.dtos.CreateOrganizationInputDTO;
 import com.pulsepass.onboardingservice.domain.repositories.CollaboratorRoleRepository;
+import com.pulsepass.onboardingservice.domain.repositories.LegalPersonAddressRepository;
 import com.pulsepass.onboardingservice.domain.repositories.LegalPersonCollaboratorHistoryRepository;
 import com.pulsepass.onboardingservice.domain.repositories.LegalPersonCollaboratorRepository;
 import com.pulsepass.onboardingservice.domain.repositories.LegalPersonCollaboratorStatusRepository;
+import com.pulsepass.onboardingservice.domain.repositories.LegalPersonCompanyTypeRepository;
 import com.pulsepass.onboardingservice.domain.repositories.LegalPersonRepository;
 import com.pulsepass.onboardingservice.domain.repositories.NaturalPersonRepository;
 import com.pulsepass.onboardingservice.domain.repositories.PersonPhoneNumberRepository;
@@ -58,6 +64,8 @@ public class LegalPersonService {
     private final PersonTypeRepository personTypeRepository;
     private final NaturalPersonRepository naturalPersonRepository;
     private final LegalPersonRepository legalPersonRepository;
+    private final LegalPersonAddressRepository legalPersonAddressRepository;
+    private final LegalPersonCompanyTypeRepository legalPersonCompanyTypeRepository;
     private final PersonPhoneNumberRepository personPhoneNumberRepository;
     private final CollaboratorRoleRepository collaboratorRoleRepository;
     private final LegalPersonCollaboratorStatusRepository legalPersonCollaboratorStatusRepository;
@@ -72,6 +80,8 @@ public class LegalPersonService {
             PersonTypeRepository personTypeRepository,
             NaturalPersonRepository naturalPersonRepository,
             LegalPersonRepository legalPersonRepository,
+            LegalPersonAddressRepository legalPersonAddressRepository,
+            LegalPersonCompanyTypeRepository legalPersonCompanyTypeRepository,
             PersonPhoneNumberRepository personPhoneNumberRepository,
             CollaboratorRoleRepository collaboratorRoleRepository,
             LegalPersonCollaboratorStatusRepository legalPersonCollaboratorStatusRepository,
@@ -85,6 +95,8 @@ public class LegalPersonService {
         this.personTypeRepository = personTypeRepository;
         this.naturalPersonRepository = naturalPersonRepository;
         this.legalPersonRepository = legalPersonRepository;
+        this.legalPersonAddressRepository = legalPersonAddressRepository;
+        this.legalPersonCompanyTypeRepository = legalPersonCompanyTypeRepository;
         this.personPhoneNumberRepository = personPhoneNumberRepository;
         this.collaboratorRoleRepository = collaboratorRoleRepository;
         this.legalPersonCollaboratorStatusRepository = legalPersonCollaboratorStatusRepository;
@@ -94,13 +106,11 @@ public class LegalPersonService {
         this.organizationGateway = organizationGateway;
     }
 
-    private PersonType findPersonType(PersonTypeEnum personType) {
-        return personTypeRepository
-                .findByEnumerator(personType.name())
-                .orElseThrow(() -> new IllegalStateException("Person type not found"));
-    }
-
-    private LegalPerson saveLegalPerson(CreateLegalPersonDTO dto, PersonType legalType) {
+    private LegalPerson saveLegalPerson(
+            CreateLegalPersonDTO dto,
+            PersonType legalType,
+            LegalPersonCompanyType companyType
+    ) {
         Person person;
         try {
             person = personRepository.save(new Person(
@@ -114,7 +124,20 @@ public class LegalPersonService {
             logger.warn("LegalPersonService.createLegalPerson - Unique violation on CNPJ", e);
             throw new LegalPersonAlreadyExistsException();
         }
-        LegalPerson legalPerson = legalPersonRepository.save(new LegalPerson(person));
+        LegalPersonAddress address = legalPersonAddressRepository.save(new LegalPersonAddress(
+                UUID.randomUUID().toString(),
+                dto.legalPersonAddress().postalCode(),
+                dto.legalPersonAddress().street(),
+                dto.legalPersonAddress().number(),
+                dto.legalPersonAddress().complement(),
+                dto.legalPersonAddress().neighborhood()
+        ));
+        LegalPerson legalPerson = legalPersonRepository.save(new LegalPerson(
+                person,
+                address,
+                companyType,
+                dto.monthlyRevenueAmount()
+        ));
         personPhoneNumberRepository.save(new PersonPhoneNumber(
                 UUID.randomUUID().toString(),
                 person,
@@ -153,13 +176,13 @@ public class LegalPersonService {
                     legalPersonKey,
                     List.of(UserRoleInputDTO.ORGANIZER)
             ));
-        } catch (UserCreationException ex) {
+        } catch (Exception ex) {
             logger.error(
                     "LegalPersonService.createLegalPerson - Failed to create the user {}",
                     Map.of("legal_person_key", legalPersonKey, "owner_person_key", ownerKey),
                     ex
             );
-            throw ex;
+            throw new UserCreationException();
         }
     }
 
@@ -170,13 +193,13 @@ public class LegalPersonService {
                     dto.documentNumber(),
                     dto.name()
             ));
-        } catch (OrganizationCreationException ex) {
+        } catch (Exception ex) {
             logger.error(
                     "LegalPersonService.createLegalPerson - Failed to create the organization {}",
                     Map.of("legal_person_key", legalPersonKey, "owner_person_key", ownerKey),
                     ex
             );
-            throw ex;
+            throw new OrganizationCreationException();
         }
     }
 
@@ -210,8 +233,30 @@ public class LegalPersonService {
             throw new NaturalPersonAlreadyExistsException();
         }
 
-        PersonType legalType = findPersonType(PersonTypeEnum.LEGAL);
-        PersonType naturalType = findPersonType(PersonTypeEnum.NATURAL);
+        if (dto.email().equalsIgnoreCase(owner.email())) {
+            logger.warn("LegalPersonService.createLegalPerson - Company and owner share the same email");
+            throw new PersonEmailAlreadyExistsException();
+        }
+
+        if (personRepository.findByEmail(dto.email()).isPresent()) {
+            logger.warn("LegalPersonService.createLegalPerson - Person already exists for company email");
+            throw new PersonEmailAlreadyExistsException();
+        }
+
+        if (personRepository.findByEmail(owner.email()).isPresent()) {
+            logger.warn("LegalPersonService.createLegalPerson - Person already exists for owner email");
+            throw new PersonEmailAlreadyExistsException();
+        }
+
+        PersonType legalType = personTypeRepository
+                .findByEnumerator(PersonTypeEnum.LEGAL.name())
+                .orElseThrow(() -> new IllegalStateException("Person type not found"));
+        PersonType naturalType = personTypeRepository
+                .findByEnumerator(PersonTypeEnum.NATURAL.name())
+                .orElseThrow(() -> new IllegalStateException("Person type not found"));
+        LegalPersonCompanyType companyType = legalPersonCompanyTypeRepository
+                .findByEnumerator(dto.legalPersonCompanyType().name())
+                .orElseThrow(() -> new IllegalStateException("Legal person company type not found"));
         CollaboratorRole ownerRole = collaboratorRoleRepository
                 .findByEnumerator(CollaboratorRoleEnum.OWNER.name())
                 .orElseThrow(() -> new IllegalStateException("Collaborator role OWNER not found"));
@@ -220,7 +265,7 @@ public class LegalPersonService {
                 .orElseThrow(() -> new IllegalStateException("Legal person collaborator status ACTIVE not found"));
 
         unitOfWork.begin();
-        LegalPerson legalPerson = saveLegalPerson(dto, legalType);
+        LegalPerson legalPerson = saveLegalPerson(dto, legalType, companyType);
         NaturalPerson naturalPerson = saveNaturalPerson(owner, naturalType);
         LegalPersonCollaborator collaborator = legalPersonCollaboratorRepository.save(new LegalPersonCollaborator(
                 UUID.randomUUID().toString(),
@@ -277,7 +322,10 @@ public class LegalPersonService {
         return new GetInternalLegalPersonDTO(
                 legalPerson.getPerson(),
                 ownerCollaborator.getNaturalPerson().getPerson(),
-                phoneNumbers
+                phoneNumbers,
+                legalPerson.getLegalPersonCompanyType(),
+                legalPerson.getMonthlyRevenueAmount(),
+                legalPerson.getLegalPersonAddress()
         );
     }
 }

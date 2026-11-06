@@ -1,11 +1,15 @@
 package com.pulsepass.onboardingservice.domain.entities;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class LegalPerson {
 
     private Long id;
     private Person person;
+    private LegalPersonAddress legalPersonAddress;
+    private LegalPersonCompanyType legalPersonCompanyType;
+    private BigDecimal monthlyRevenueAmount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -13,19 +17,31 @@ public class LegalPerson {
     }
 
     public LegalPerson(
-            Person person
+            Person person,
+            LegalPersonAddress legalPersonAddress,
+            LegalPersonCompanyType legalPersonCompanyType,
+            BigDecimal monthlyRevenueAmount
     ) {
         this.person = person;
+        this.legalPersonAddress = legalPersonAddress;
+        this.legalPersonCompanyType = legalPersonCompanyType;
+        this.monthlyRevenueAmount = monthlyRevenueAmount;
     }
 
     public LegalPerson(
             Long id,
             Person person,
+            LegalPersonAddress legalPersonAddress,
+            LegalPersonCompanyType legalPersonCompanyType,
+            BigDecimal monthlyRevenueAmount,
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
         this.id = id;
         this.person = person;
+        this.legalPersonAddress = legalPersonAddress;
+        this.legalPersonCompanyType = legalPersonCompanyType;
+        this.monthlyRevenueAmount = monthlyRevenueAmount;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -44,6 +60,30 @@ public class LegalPerson {
 
     public void setPerson(Person person) {
         this.person = person;
+    }
+
+    public LegalPersonAddress getLegalPersonAddress() {
+        return this.legalPersonAddress;
+    }
+
+    public void setLegalPersonAddress(LegalPersonAddress legalPersonAddress) {
+        this.legalPersonAddress = legalPersonAddress;
+    }
+
+    public LegalPersonCompanyType getLegalPersonCompanyType() {
+        return this.legalPersonCompanyType;
+    }
+
+    public void setLegalPersonCompanyType(LegalPersonCompanyType legalPersonCompanyType) {
+        this.legalPersonCompanyType = legalPersonCompanyType;
+    }
+
+    public BigDecimal getMonthlyRevenueAmount() {
+        return this.monthlyRevenueAmount;
+    }
+
+    public void setMonthlyRevenueAmount(BigDecimal monthlyRevenueAmount) {
+        this.monthlyRevenueAmount = monthlyRevenueAmount;
     }
 
     public LocalDateTime getCreatedAt() {

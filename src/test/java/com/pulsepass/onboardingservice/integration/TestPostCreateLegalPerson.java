@@ -6,9 +6,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.pulsepass.onboardingservice.common.CnpjGenerator;
 import com.pulsepass.onboardingservice.common.CpfGenerator;
 import com.pulsepass.onboardingservice.common.MockTools;
+import com.pulsepass.onboardingservice.common.SetupTools;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,14 +36,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", cpf,
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         String cnpj = CnpjGenerator.generateCnpj();
         Map<String, Object> payload = Map.of(
                 "document_number", cnpj,
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         String userId = UUID.randomUUID().toString();
@@ -69,7 +79,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         assertThat(UUID.fromString(personKey)).isNotNull();
         assertThat(response.jsonPath().getString("document_number")).isEqualTo(cnpj);
         assertThat(response.jsonPath().getString("name")).isEqualTo("Lenha Produções Artísticas Ltda");
-        assertThat(response.jsonPath().getString("email")).isEqualTo("contato@lenha.com.br");
+        assertThat(response.jsonPath().getString("email")).endsWith("@lenha.com.br");
 
         List<Map<String, Object>> users = MockTools.retrieveRequests(
                 "POST", "/admin/realms/pulse-pass/users");
@@ -77,7 +87,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> userRequestBody = (Map<String, Object>) users.get(0).get("body");
         JsonPath user = new JsonPath(mapper.writeValueAsString(userRequestBody.get("json")));
         assertThat(user.getString("username")).isEqualTo(cpf);
-        assertThat(user.getString("email")).isEqualTo("bianca@lenha.com.br");
+        assertThat(user.getString("email")).endsWith("@lenha.com.br");
         assertThat(user.getBoolean("enabled")).isTrue();
         assertThat(user.getString("attributes.person_key[0]")).isNotBlank().isNotEqualTo(personKey);
         assertThat(user.getString("attributes.legal_person_key[0]")).isEqualTo(personKey);
@@ -119,14 +129,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         String cnpj = CnpjGenerator.generateCnpj();
         Map<String, Object> payload = Map.of(
                 "document_number", cnpj,
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         String userId = UUID.randomUUID().toString();
@@ -158,13 +176,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> secondPayload = Map.of(
                 "document_number", cnpj,
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", secondPhoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(secondCollaborator));
 
         Response secondResponse = given()
@@ -195,13 +221,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", cpf,
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         String userId = UUID.randomUUID().toString();
@@ -233,13 +267,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", cpf,
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> secondPayload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", secondPhoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(secondCollaborator));
 
         Response secondResponse = given()
@@ -267,7 +309,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         String cnpj = CnpjGenerator.generateCnpj();
         char last = cnpj.charAt(13);
@@ -275,8 +317,16 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> payload = Map.of(
                 "document_number", invalid,
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -307,13 +357,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", invalid,
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -341,13 +399,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "MEMBER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -375,12 +441,20 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -409,12 +483,20 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -443,12 +525,20 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -477,12 +567,20 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -511,13 +609,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
-                "phone_number", phoneNumber);
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"));
 
         Response response = given()
                     .header("Accept-Language", "en")
@@ -545,13 +651,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj().substring(0, 13),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -580,13 +694,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf().substring(0, 10),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -615,13 +737,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -650,13 +780,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -685,13 +823,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -720,13 +866,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -755,13 +909,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -790,13 +952,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", "not-an-email",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -830,8 +1000,16 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -860,13 +1038,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "1234567");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -894,8 +1080,16 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of());
 
         Response response = given()
@@ -924,19 +1118,27 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> secondCollaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(firstCollaborator, secondCollaborator));
 
         Response response = given()
@@ -964,13 +1166,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> collaborator = Map.of(
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -998,13 +1208,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1032,13 +1250,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1071,8 +1297,16 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1101,12 +1335,20 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br");
+                "email", UUID.randomUUID() + "@lenha.com.br");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1134,13 +1376,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1168,13 +1418,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1202,13 +1460,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1237,13 +1503,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", "11.222.333/0001-81",
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1272,13 +1546,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", "529.982.247-25",
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1307,13 +1589,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", "1122233300018A",
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1342,13 +1632,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", "5299822472A",
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1377,13 +1675,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "   ");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1413,13 +1719,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", "",
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1449,13 +1763,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "   ",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1484,12 +1806,20 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         Response response = given()
@@ -1574,14 +1904,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", cpf,
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         String cnpj = CnpjGenerator.generateCnpj();
         Map<String, Object> payload = Map.of(
                 "document_number", cnpj,
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         MockTools.addExpectation("keycloak/post-token");
@@ -1612,13 +1950,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", cpf,
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> secondPayload = Map.of(
                 "document_number", cnpj,
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", secondPhoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(secondCollaborator));
 
         Response secondResponse = given()
@@ -1647,14 +1993,22 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", cpf,
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         String cnpj = CnpjGenerator.generateCnpj();
         Map<String, Object> payload = Map.of(
                 "document_number", cnpj,
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(collaborator));
 
         String userId = UUID.randomUUID().toString();
@@ -1685,13 +2039,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "collaborator_role", "OWNER",
                 "document_number", cpf,
                 "name", "Bianca Torres",
-                "email", "bianca@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "password", "12345678");
         Map<String, Object> secondPayload = Map.of(
                 "document_number", cnpj,
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", secondPhoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(secondCollaborator));
 
         Response secondResponse = given()
@@ -1706,5 +2068,1153 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         assertThat(secondResponse.statusCode()).isEqualTo(409);
         assertThat(secondResponse.jsonPath().getString("code")).isEqualTo("ONB00001");
         assertThat(secondResponse.jsonPath().getList("extra_fields")).isEmpty();
+    }
+
+    @Test
+    void createLegalPerson_missingLegalPersonCompanyType_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_company_type", "error", "REQUIRED"));
+    }
+
+    @Test
+    void createLegalPerson_unknownLegalPersonCompanyType_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "UNKNOWN",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "body", "error", "INVALID_FORMAT"));
+    }
+
+    @Test
+    void createLegalPerson_lowercaseLegalPersonCompanyType_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "limited",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "body", "error", "INVALID_FORMAT"));
+    }
+
+    @Test
+    void createLegalPerson_missingMonthlyRevenueAmount_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "monthly_revenue_amount", "error", "REQUIRED"));
+    }
+
+    @Test
+    void createLegalPerson_zeroMonthlyRevenueAmount_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 0,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "monthly_revenue_amount", "error", "INVALID_FORMAT"));
+    }
+
+    @Test
+    void createLegalPerson_negativeMonthlyRevenueAmount_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", -10.50,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "monthly_revenue_amount", "error", "INVALID_FORMAT"));
+    }
+
+    @Test
+    void createLegalPerson_monthlyRevenueAmountWithThreeDecimals_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 10.123,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "monthly_revenue_amount", "error", "INVALID_FORMAT"));
+    }
+
+    @Test
+    void createLegalPerson_monthlyRevenueAmountWithEighteenIntegerDigits_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", new BigDecimal("123456789012345678"),
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "monthly_revenue_amount", "error", "INVALID_FORMAT"));
+    }
+
+    @Test
+    void createLegalPerson_monthlyRevenueAmountAsText_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", "abc",
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "body", "error", "INVALID_FORMAT"));
+    }
+
+    @Test
+    void createLegalPerson_missingLegalPersonAddress_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_address", "error", "REQUIRED"));
+    }
+
+    @Test
+    void createLegalPerson_missingAddressPostalCode_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_address.postal_code", "error", "REQUIRED"));
+    }
+
+    @Test
+    void createLegalPerson_addressPostalCodeWithSevenDigits_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "9011022",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_address.postal_code", "error", "INVALID_FORMAT"));
+    }
+
+    @Test
+    void createLegalPerson_addressPostalCodeWithMask_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110-220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_address.postal_code", "error", "INVALID_FORMAT"));
+    }
+
+    @Test
+    void createLegalPerson_missingAddressStreet_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_address.street", "error", "REQUIRED"));
+    }
+
+    @Test
+    void createLegalPerson_addressStreetWithTwoHundredFiftySixCharacters_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "a".repeat(256),
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_address.street", "error", "SIZE"));
+    }
+
+    @Test
+    void createLegalPerson_missingAddressNumber_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_address.number", "error", "REQUIRED"));
+    }
+
+    @Test
+    void createLegalPerson_addressNumberWithTwentyOneCharacters_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "1".repeat(21),
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_address.number", "error", "SIZE"));
+    }
+
+    @Test
+    void createLegalPerson_addressComplementWithTwoHundredFiftySixCharacters_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "a".repeat(256),
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_address.complement", "error", "SIZE"));
+    }
+
+    @Test
+    void createLegalPerson_missingAddressNeighborhood_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_address.neighborhood", "error", "REQUIRED"));
+    }
+
+    @Test
+    void createLegalPerson_addressNeighborhoodWithTwoHundredFiftySixCharacters_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "a".repeat(256)),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_address.neighborhood", "error", "SIZE"));
+    }
+
+    @Test
+    void createLegalPerson_validPayloadWithNewFields_persistsCompanyTypeRevenueAndAddress() {
+        MockTools.clearMocker();
+        String userId = UUID.randomUUID().toString();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"),
+                Map.of("payload", Map.of("id", UUID.randomUUID().toString())));
+        MockTools.addExpectation("keycloak/post-users", Map.of(), Map.of(
+                "headers", Map.of("Location", List.of("/admin/realms/pulse-pass/users/" + userId))));
+        MockTools.addExpectation("keycloak/post-role_mappings", Map.of("user_id", userId));
+        MockTools.addExpectation("organization-service/post-organizations", Map.of(),
+                Map.of("payload", Map.of("organization_key", UUID.randomUUID().toString())));
+        String cnpj = CnpjGenerator.generateCnpj();
+        Map<String, Object> payload = Map.of(
+                "document_number", cnpj,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(201);
+        String personKey = response.jsonPath().getString("person_key");
+        assertThat(response.jsonPath().getString("legal_person_company_type")).isNull();
+        assertThat(response.jsonPath().getString("legal_person_address")).isNull();
+
+        Response internalResponse = given()
+                    .header("internal-token", internalToken)
+                .when()
+                    .get("/onboarding/internal/legal_persons/{legal_person_key}", personKey)
+                .then()
+                    .extract().response();
+
+        assertThat(internalResponse.statusCode()).isEqualTo(200);
+        assertThat(internalResponse.jsonPath().getString("legal_person_company_type")).isEqualTo("LIMITED");
+        assertThat(internalResponse.jsonPath().getDouble("monthly_revenue_amount")).isEqualTo(25000.00);
+        assertThat(internalResponse.jsonPath().getString("legal_person_address.legal_person_address_key"))
+                .isNotBlank();
+        assertThat(internalResponse.jsonPath().getString("legal_person_address.postal_code")).isEqualTo("90110220");
+        assertThat(internalResponse.jsonPath().getString("legal_person_address.street"))
+                .isEqualTo("Rua Ismael Chaves Barcelos");
+        assertThat(internalResponse.jsonPath().getString("legal_person_address.number")).isEqualTo("60");
+        assertThat(internalResponse.jsonPath().getString("legal_person_address.complement")).isEqualTo("Sala 2");
+        assertThat(internalResponse.jsonPath().getString("legal_person_address.neighborhood"))
+                .isEqualTo("Praia de Belas");
+    }
+
+    @Test
+    void createLegalPerson_addressWithoutComplement_returnsCreatedWithNullComplement() {
+        MockTools.clearMocker();
+        String userId = UUID.randomUUID().toString();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"),
+                Map.of("payload", Map.of("id", UUID.randomUUID().toString())));
+        MockTools.addExpectation("keycloak/post-users", Map.of(), Map.of(
+                "headers", Map.of("Location", List.of("/admin/realms/pulse-pass/users/" + userId))));
+        MockTools.addExpectation("keycloak/post-role_mappings", Map.of("user_id", userId));
+        MockTools.addExpectation("organization-service/post-organizations", Map.of(),
+                Map.of("payload", Map.of("organization_key", UUID.randomUUID().toString())));
+        String cnpj = CnpjGenerator.generateCnpj();
+        Map<String, Object> payload = Map.of(
+                "document_number", cnpj,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "MEI",
+                "monthly_revenue_amount", 1234.56,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(201);
+        String personKey = response.jsonPath().getString("person_key");
+        assertThat(response.jsonPath().getString("legal_person_company_type")).isNull();
+        assertThat(response.jsonPath().getString("legal_person_address")).isNull();
+
+        Response internalResponse = given()
+                    .header("internal-token", internalToken)
+                .when()
+                    .get("/onboarding/internal/legal_persons/{legal_person_key}", personKey)
+                .then()
+                    .extract().response();
+
+        assertThat(internalResponse.statusCode()).isEqualTo(200);
+        assertThat(internalResponse.jsonPath().getString("legal_person_company_type")).isEqualTo("MEI");
+        assertThat(internalResponse.jsonPath().getDouble("monthly_revenue_amount")).isEqualTo(1234.56);
+        assertThat(internalResponse.jsonPath().getString("legal_person_address.postal_code")).isEqualTo("90110220");
+        assertThat(internalResponse.jsonPath().getString("legal_person_address.complement")).isNull();
+    }
+
+    @Test
+    void createLegalPerson_addressComplementBlank_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "   ",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "legal_person_address.complement", "error", "INVALID_FORMAT"));
+    }
+
+    @Test
+    void createLegalPerson_sameEmailForCompanyAndOwner_returnsConflict() {
+        MockTools.clearMocker();
+        String email = UUID.randomUUID() + "@lenha.com.br";
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", email,
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                                                "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", email,
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(409);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("ONB00010");
+    }
+
+    @Test
+    void createLegalPerson_emailOfExistingPerson_returnsConflict() {
+        String email = SetupTools.createLegalPerson(CpfGenerator.generateCpf()).getString("email");
+        MockTools.clearMocker();
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", email,
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                                                "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(409);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("ONB00010");
+    }
+
+    @Test
+    void createLegalPerson_monthlyRevenueWithSeventeenIntegerDigits_returnsCreated() {
+        MockTools.clearMocker();
+        String userId = UUID.randomUUID().toString();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"),
+                Map.of("payload", Map.of("id", UUID.randomUUID().toString())));
+        MockTools.addExpectation("keycloak/post-users", Map.of(), Map.of(
+                "headers", Map.of("Location", List.of("/admin/realms/pulse-pass/users/" + userId))));
+        MockTools.addExpectation("keycloak/post-role_mappings", Map.of("user_id", userId));
+        MockTools.addExpectation("organization-service/post-organizations", Map.of(),
+                Map.of("payload", Map.of("organization_key", UUID.randomUUID().toString())));
+        String cnpj = CnpjGenerator.generateCnpj();
+        Map<String, Object> payload = Map.of(
+                "document_number", cnpj,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "MEI",
+                "monthly_revenue_amount", new BigDecimal("12345678901234567.89"),
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(201);
+    }
+
+    @Test
+    void createLegalPerson_companyTypeIndividual_persistsEnumerator() {
+        MockTools.clearMocker();
+        String userId = UUID.randomUUID().toString();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"),
+                Map.of("payload", Map.of("id", UUID.randomUUID().toString())));
+        MockTools.addExpectation("keycloak/post-users", Map.of(), Map.of(
+                "headers", Map.of("Location", List.of("/admin/realms/pulse-pass/users/" + userId))));
+        MockTools.addExpectation("keycloak/post-role_mappings", Map.of("user_id", userId));
+        MockTools.addExpectation("organization-service/post-organizations", Map.of(),
+                Map.of("payload", Map.of("organization_key", UUID.randomUUID().toString())));
+        String cnpj = CnpjGenerator.generateCnpj();
+        Map<String, Object> payload = Map.of(
+                "document_number", cnpj,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "INDIVIDUAL",
+                "monthly_revenue_amount", 0.01,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(201);
+        String personKey = response.jsonPath().getString("person_key");
+        assertThat(response.jsonPath().getString("legal_person_company_type")).isNull();
+        assertThat(response.jsonPath().getString("legal_person_address")).isNull();
+
+        Response internalResponse = given()
+                    .header("internal-token", internalToken)
+                .when()
+                    .get("/onboarding/internal/legal_persons/{legal_person_key}", personKey)
+                .then()
+                    .extract().response();
+
+        assertThat(internalResponse.statusCode()).isEqualTo(200);
+        assertThat(internalResponse.jsonPath().getString("legal_person_company_type")).isEqualTo("INDIVIDUAL");
+        assertThat(internalResponse.jsonPath().getDouble("monthly_revenue_amount")).isEqualTo(0.01);
+    }
+
+    @Test
+    void createLegalPerson_companyTypeAssociation_persistsEnumerator() {
+        MockTools.clearMocker();
+        String userId = UUID.randomUUID().toString();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"),
+                Map.of("payload", Map.of("id", UUID.randomUUID().toString())));
+        MockTools.addExpectation("keycloak/post-users", Map.of(), Map.of(
+                "headers", Map.of("Location", List.of("/admin/realms/pulse-pass/users/" + userId))));
+        MockTools.addExpectation("keycloak/post-role_mappings", Map.of("user_id", userId));
+        MockTools.addExpectation("organization-service/post-organizations", Map.of(),
+                Map.of("payload", Map.of("organization_key", UUID.randomUUID().toString())));
+        String cnpj = CnpjGenerator.generateCnpj();
+        Map<String, Object> payload = Map.of(
+                "document_number", cnpj,
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "ASSOCIATION",
+                "monthly_revenue_amount", 0.01,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(201);
+        String personKey = response.jsonPath().getString("person_key");
+        assertThat(response.jsonPath().getString("legal_person_company_type")).isNull();
+        assertThat(response.jsonPath().getString("legal_person_address")).isNull();
+
+        Response internalResponse = given()
+                    .header("internal-token", internalToken)
+                .when()
+                    .get("/onboarding/internal/legal_persons/{legal_person_key}", personKey)
+                .then()
+                    .extract().response();
+
+        assertThat(internalResponse.statusCode()).isEqualTo(200);
+        assertThat(internalResponse.jsonPath().getString("legal_person_company_type")).isEqualTo("ASSOCIATION");
+        assertThat(internalResponse.jsonPath().getDouble("monthly_revenue_amount")).isEqualTo(0.01);
     }
 }

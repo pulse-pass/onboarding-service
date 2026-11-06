@@ -32,13 +32,21 @@ public final class SetupTools {
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", "contato@lenha.com.br",
+                "email", UUID.randomUUID() + "@lenha.com.br",
                 "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(Map.of(
                         "collaborator_role", "OWNER",
                         "document_number", ownerDocumentNumber,
                         "name", "Bianca Torres",
-                        "email", "bianca@lenha.com.br",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
                         "password", "12345678")));
 
         Response response = given()

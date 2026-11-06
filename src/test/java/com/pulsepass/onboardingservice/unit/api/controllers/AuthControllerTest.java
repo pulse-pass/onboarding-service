@@ -187,7 +187,7 @@ class AuthControllerTest {
         var owner = new Person("person-key", null, "52998224725", "Bianca Torres", "b@mail.com");
         var company = new Person("legal-person-key", null, "12345678000195", "Lenha Ltda", "l@mail.com");
         when(authService.getSession(any(), any(), any()))
-                .thenReturn(new GetSessionDTO(owner, List.of("organizer"), new LegalPerson(company)));
+                .thenReturn(new GetSessionDTO(owner, List.of("organizer"), new LegalPerson(company, null, null, null)));
 
         mockMvc.perform(get(ME_URL)
                         .header("selected-user-key", "person-key")

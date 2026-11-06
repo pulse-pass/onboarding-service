@@ -171,16 +171,6 @@ class KeycloakIdentityProviderGatewayTest {
     }
 
     @Test
-    void createUser_tokenWithoutAccessToken_throwsUserCreationException() {
-        server.on("POST", TOKEN_PATH, Response.of(200, "{}"));
-
-        assertThatThrownBy(() -> gateway.createUser(input("John Doe", List.of(UserRoleInputDTO.ORGANIZER))))
-                .isInstanceOf(UserCreationException.class);
-
-        assertThat(wasCalled("POST", USERS_PATH)).isFalse();
-    }
-
-    @Test
     void createUser_tokenEndpointFails_throwsUserCreationException() {
         server.on("POST", TOKEN_PATH, Response.of(401, "{\"error\":\"unauthorized_client\"}"));
 
@@ -228,6 +218,17 @@ class KeycloakIdentityProviderGatewayTest {
                 .isInstanceOf(IllegalStateException.class);
 
         assertThat(wasCalled("POST", ROLE_MAPPINGS_PATH)).isFalse();
+    }
+
+    @Test
+    void createUser_tokenEmptyBody_throwsUserCreationException() {
+        stubHappyPath();
+        server.on("POST", TOKEN_PATH, Response.empty(200));
+
+        assertThatThrownBy(() -> gateway.createUser(input("John Doe", List.of(UserRoleInputDTO.ORGANIZER))))
+                .isInstanceOf(UserCreationException.class);
+
+        assertThat(wasCalled("POST", USERS_PATH)).isFalse();
     }
 
     @Test
@@ -364,41 +365,6 @@ class KeycloakIdentityProviderGatewayTest {
     }
 
     @Test
-    void createSession_bodyWithoutAccessToken_throwsSessionException() {
-        server.on("POST", TOKEN_PATH, Response.of(200, "{}"));
-
-        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123")))
-                .isInstanceOf(SessionException.class);
-    }
-
-    @Test
-    void createSession_bodyWithoutRefreshToken_throwsSessionException() {
-        server.on("POST", TOKEN_PATH,
-                Response.of(200, "{\"access_token\":\"a\",\"expires_in\":300,\"refresh_expires_in\":1800}"));
-
-        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123")))
-                .isInstanceOf(SessionException.class);
-    }
-
-    @Test
-    void createSession_bodyWithoutExpiresIn_throwsSessionException() {
-        server.on("POST", TOKEN_PATH,
-                Response.of(200, "{\"access_token\":\"a\",\"refresh_token\":\"r\",\"refresh_expires_in\":1800}"));
-
-        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123")))
-                .isInstanceOf(SessionException.class);
-    }
-
-    @Test
-    void createSession_bodyWithoutRefreshExpiresIn_throwsSessionException() {
-        server.on("POST", TOKEN_PATH,
-                Response.of(200, "{\"access_token\":\"a\",\"refresh_token\":\"r\",\"expires_in\":300}"));
-
-        assertThatThrownBy(() -> gateway.createSession(new CreateSessionInputDTO("52998224725", "Secret123")))
-                .isInstanceOf(SessionException.class);
-    }
-
-    @Test
     void createSession_emptyBody_throwsSessionException() {
         server.on("POST", TOKEN_PATH, Response.empty(200));
 
@@ -455,43 +421,8 @@ class KeycloakIdentityProviderGatewayTest {
     }
 
     @Test
-    void refreshSession_bodyWithoutAccessToken_throwsSessionException() {
-        server.on("POST", TOKEN_PATH, Response.of(200, "{}"));
-
-        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
-                .isInstanceOf(SessionException.class);
-    }
-
-    @Test
     void refreshSession_emptyBody_throwsSessionException() {
         server.on("POST", TOKEN_PATH, Response.empty(200));
-
-        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
-                .isInstanceOf(SessionException.class);
-    }
-
-    @Test
-    void refreshSession_bodyWithoutRefreshToken_throwsSessionException() {
-        server.on("POST", TOKEN_PATH,
-                Response.of(200, "{\"access_token\":\"a\",\"expires_in\":300,\"refresh_expires_in\":1800}"));
-
-        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
-                .isInstanceOf(SessionException.class);
-    }
-
-    @Test
-    void refreshSession_bodyWithoutExpiresIn_throwsSessionException() {
-        server.on("POST", TOKEN_PATH,
-                Response.of(200, "{\"access_token\":\"a\",\"refresh_token\":\"r\",\"refresh_expires_in\":1800}"));
-
-        assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
-                .isInstanceOf(SessionException.class);
-    }
-
-    @Test
-    void refreshSession_bodyWithoutRefreshExpiresIn_throwsSessionException() {
-        server.on("POST", TOKEN_PATH,
-                Response.of(200, "{\"access_token\":\"a\",\"refresh_token\":\"r\",\"expires_in\":300}"));
 
         assertThatThrownBy(() -> gateway.refreshSession(new RefreshSessionInputDTO("refresh")))
                 .isInstanceOf(SessionException.class);

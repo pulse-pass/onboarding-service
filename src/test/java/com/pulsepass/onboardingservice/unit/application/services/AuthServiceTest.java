@@ -17,6 +17,7 @@ import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidSessionException;
+import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.IdentityProviderGateway;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeleteSessionInputDTO;
@@ -121,6 +122,31 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> service.deleteSession(new DeleteSessionDTO("expired")))
                 .isInstanceOf(InvalidRefreshTokenException.class);
+    }
+
+    @Test
+    void createSession_unexpectedFailure_throwsSessionException() {
+        when(personRepository.findByDocumentNumber("52998224725")).thenReturn(Optional.of(person));
+        when(identityProviderGateway.createSession(any())).thenThrow(new IllegalStateException("boom"));
+
+        assertThatThrownBy(() -> service.createSession(new CreateSessionDTO("52998224725", "Secret123")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void refreshSession_unexpectedFailure_throwsSessionException() {
+        when(identityProviderGateway.refreshSession(any())).thenThrow(new IllegalStateException("boom"));
+
+        assertThatThrownBy(() -> service.refreshSession(new RefreshSessionDTO("refresh")))
+                .isInstanceOf(SessionException.class);
+    }
+
+    @Test
+    void deleteSession_unexpectedFailure_throwsSessionException() {
+        doThrow(new IllegalStateException("boom")).when(identityProviderGateway).deleteSession(any());
+
+        assertThatThrownBy(() -> service.deleteSession(new DeleteSessionDTO("refresh")))
+                .isInstanceOf(SessionException.class);
     }
 
     @Test

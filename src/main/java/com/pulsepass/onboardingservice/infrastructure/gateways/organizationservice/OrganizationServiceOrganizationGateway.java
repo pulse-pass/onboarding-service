@@ -74,9 +74,9 @@ public class OrganizationServiceOrganizationGateway implements OrganizationGatew
             );
             throw new OrganizationCreationException();
         }
-        if (response.getBody() == null || response.getBody().organizationKey() == null) {
+        if (response.getBody() == null) {
             logger.error(
-                    "OrganizationServiceOrganizationGateway.createOrganization - Response without organization key {}",
+                    "OrganizationServiceOrganizationGateway.createOrganization - Response without body {}",
                     Map.of("step", "create_organization", "status", response.getStatusCode().value())
             );
             throw new OrganizationCreationException();
