@@ -495,7 +495,8 @@ class LegalPersonServiceTest {
     void createLegalPerson_unexpectedUserFailure_throwsUserCreationExceptionAndSkipsOrganization() {
         stubLookups();
         stubSaves();
-        doThrow(new IllegalStateException("boom")).when(identityProviderGateway).createUser(any(CreateUserInputDTO.class));
+        doThrow(new IllegalStateException("boom"))
+                .when(identityProviderGateway).createUser(any(CreateUserInputDTO.class));
 
         assertThatThrownBy(() -> service.createLegalPerson(dto(CNPJ, "OWNER", CPF)))
                 .isInstanceOf(UserCreationException.class);
