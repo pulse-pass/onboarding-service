@@ -15,14 +15,13 @@ class PersonTest {
     void new_withoutId_exposesValuesAndNullId() {
         var type = new PersonType(1L, "LEGAL", NOW);
 
-        var person = new Person("key", type, "12345678000195", "Acme", "acme@mail.com");
+        var person = new Person("key", type, "12345678000195", "Acme");
 
         assertThat(person.getId()).isNull();
         assertThat(person.getPersonKey()).isEqualTo("key");
         assertThat(person.getPersonType()).isSameAs(type);
         assertThat(person.getDocumentNumber()).isEqualTo("12345678000195");
         assertThat(person.getName()).isEqualTo("Acme");
-        assertThat(person.getEmail()).isEqualTo("acme@mail.com");
         assertThat(person.getCreatedAt()).isNull();
         assertThat(person.getUpdatedAt()).isNull();
     }
@@ -30,7 +29,7 @@ class PersonTest {
     @Test
     void new_allArgs_exposesValues() {
         var person = new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW);
+                "12345678000195", "Acme", NOW, NOW);
 
         assertThat(person.getId()).isEqualTo(1L);
         assertThat(person.getPersonKey()).isEqualTo("person-key");
@@ -48,7 +47,6 @@ class PersonTest {
         person.setPersonType(type);
         person.setDocumentNumber("52998224725");
         person.setName("John");
-        person.setEmail("john@mail.com");
         person.setCreatedAt(NOW);
         person.setUpdatedAt(NOW);
 
@@ -57,7 +55,6 @@ class PersonTest {
         assertThat(person.getPersonType()).isSameAs(type);
         assertThat(person.getDocumentNumber()).isEqualTo("52998224725");
         assertThat(person.getName()).isEqualTo("John");
-        assertThat(person.getEmail()).isEqualTo("john@mail.com");
         assertThat(person.getCreatedAt()).isEqualTo(NOW);
         assertThat(person.getUpdatedAt()).isEqualTo(NOW);
     }

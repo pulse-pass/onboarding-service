@@ -16,7 +16,7 @@ class NaturalPersonEntityTest {
     @Test
     void fromDomainToDomain_allFields_roundTrips() {
         var domain = new NaturalPerson(2L, new Person(2L, "owner-key", new PersonType(2L, "NATURAL", NOW),
-                "52998224725", "John Doe", "john@mail.com", NOW, NOW), NOW, NOW);
+                "52998224725", "John Doe", NOW, NOW), "john@mail.com", NOW, NOW);
 
         var result = NaturalPersonEntity.fromDomain(domain).toDomain();
 

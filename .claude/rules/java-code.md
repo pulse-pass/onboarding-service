@@ -12,6 +12,7 @@ paths:
 - **ONB-116** In services and controllers, public methods go: create, then update, then delete, then get/list.
 - **ONB-117** Private methods only for real auxiliary steps used by several public methods or with a clear business name of their own (e.g. `saveLegalPerson`).
 - **ONB-118** The flow of a public method stays inline and linear, in the method itself: never extract its branches or its save, history and commit sequence to a private method (`approveOrganization`, `saveAndCommit`), even when lines repeat, and never to shorten the method.
+- **ONB-272** A get service builds its result from plain lookups in sequence, never branching on a type to decide what to load: what does not apply comes back `null`.
 - **ONB-119** Lookups of domain tables by enumerator (`findByEnumerator(...).orElseThrow(...)`) stay inline in the public method, even when repeated, and are never extracted to a private method.
 - **ONB-120** Prefer separate, clear `if`s over compound `||` conditions when each case has its own meaning.
 - **ONB-121** One `catch` per different handling: two `catch` blocks that do the same thing become a single `catch (Exception ex)`. A separate `catch` exists only when that exception has specific handling.

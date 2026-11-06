@@ -184,10 +184,11 @@ class AuthControllerTest {
 
     @Test
     void getSession_organizerHeaders_returns200WithLegalPerson() throws Exception {
-        var owner = new Person("person-key", null, "52998224725", "Bianca Torres", "b@mail.com");
-        var company = new Person("legal-person-key", null, "12345678000195", "Lenha Ltda", "l@mail.com");
+        var owner = new Person("person-key", null, "52998224725", "Bianca Torres");
+        var company = new Person("legal-person-key", null, "12345678000195", "Lenha Ltda");
+        var legalPerson = new LegalPerson(company, "l@mail.com", null, null, null);
         when(authService.getSession(any(), any(), any()))
-                .thenReturn(new GetSessionDTO(owner, List.of("organizer"), new LegalPerson(company, null, null, null)));
+                .thenReturn(new GetSessionDTO(owner, List.of("organizer"), legalPerson));
 
         mockMvc.perform(get(ME_URL)
                         .header("selected-user-key", "person-key")
@@ -206,7 +207,7 @@ class AuthControllerTest {
 
     @Test
     void getSession_adminWithoutAgentHeader_returns200WithNullLegalPerson() throws Exception {
-        var admin = new Person("admin-key", null, "52998224725", "Admin", "a@mail.com");
+        var admin = new Person("admin-key", null, "52998224725", "Admin");
         when(authService.getSession(any(), any(), any()))
                 .thenReturn(new GetSessionDTO(admin, List.of("admin"), null));
 

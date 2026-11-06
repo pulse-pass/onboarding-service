@@ -33,9 +33,6 @@ public class PersonEntity {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(name = "email", nullable = false, length = 255)
-    private String email;
-
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -51,7 +48,6 @@ public class PersonEntity {
             PersonTypeEntity personType,
             String documentNumber,
             String name,
-            String email,
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
@@ -60,7 +56,6 @@ public class PersonEntity {
         this.personType = personType;
         this.documentNumber = documentNumber;
         this.name = name;
-        this.email = email;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -72,7 +67,6 @@ public class PersonEntity {
                 PersonTypeEntity.fromDomain(domain.getPersonType()),
                 domain.getDocumentNumber(),
                 domain.getName(),
-                domain.getEmail(),
                 domain.getCreatedAt(),
                 domain.getUpdatedAt()
         );
@@ -85,7 +79,6 @@ public class PersonEntity {
                 this.personType.toDomain(),
                 this.documentNumber,
                 this.name,
-                this.email,
                 this.createdAt,
                 this.updatedAt
         );

@@ -19,9 +19,9 @@ class LegalPersonCollaboratorTest {
 
     private static LegalPersonCollaborator collaborator() {
         var legal = new LegalPerson(new Person("legal-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com"), null, null, null);
+                "12345678000195", "Acme"), "acme@mail.com", null, null, null);
         var natural = new NaturalPerson(new Person("owner-key", new PersonType(2L, "NATURAL", NOW),
-                "52998224725", "John Doe", "john@mail.com"));
+                "52998224725", "John Doe"), "john@mail.com");
         return new LegalPersonCollaborator("collab-key", legal, natural, new CollaboratorRole(1L, "OWNER", NOW),
                 new LegalPersonCollaboratorStatus(1L, "ACTIVE", NOW));
     }

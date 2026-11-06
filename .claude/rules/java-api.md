@@ -29,13 +29,13 @@ paths:
 - **ONB-093** Service-to-service calls use the token; the admin reaches the route through the `backoffice-gateway`, which sends `selected-user-roles`.
 - **ONB-064** The `selected-agent-key` of a list route resolved by the token is read with `required = false` and validated by `InternalRequestValidator` (`validateSelectedAgentKey`; absent or blank → 401 `GEN00401`, `MissingSelectedAgentKeyException`), never with Bean Validation or a required header.
 - **ONB-094** A create endpoint returns only the created resource (no child lists).
-- **ONB-095** Top-level responses in `api/responses/` are named `<Action><Resource>Response` (`ListOrganizationsResponse`, `CreateLegalPersonResponse`); nested objects in `definitions/` take only the resource name (`LegalPersonOwnerResponse`).
-- **ONB-096** Responses of internal routes are named `<Action>Internal<Resource>Response` (`CreateInternalOrganizationResponse`) and their output DTOs `<Action>Internal<Resource>DTO` (`GetInternalLegalPersonDTO`).
-- **ONB-097** Reusable nested responses live in `api/responses/definitions/` as `<Entity>Response` with `fromEntity`.
+- **ONB-095** Top-level responses in `api/responses/` are named `<Action><Resource>Response` (`ListOrganizationsResponse`, `CreateLegalPersonResponse`); nested objects in `definitions/` take only the resource name (`CollaboratorNaturalPersonResponse`).
+- **ONB-096** Responses of internal routes are named `<Action>Internal<Resource>Response` (`CreateInternalOrganizationResponse`) and their output DTOs `<Action>Internal<Resource>DTO` (`GetInternalPersonDTO`).
+- **ONB-097** Reusable nested responses live in `api/responses/definitions/` as `<Entity>Response` with `fromEntity`. A nested object in `definitions/` that has an internal variant takes the `Internal` prefix (e.g. `InternalLegalPersonResponse`).
 - **ONB-098** Pagination lives in `api/responses/pagination/`.
 - **ONB-099** Input DTOs (`application/dtos/input`) exist only for fields that come from the request body through a schema; header, path and query values are passed to the service as plain parameters (e.g. `getSession(String personKey, String legalPersonKey, String roles)`).
 - **ONB-100** The `OutputDTO` suffix (and `from*Output` in responses) is only for what an external gateway returns.
-- **ONB-101** Service outputs that do not come from a gateway are `<Action><Resource>DTO` in `application/dtos/output`, named after the response they build with the suffix swapped (`GetLegalPersonDTO` → `GetLegalPersonResponse`), and the response uses `fromDTO`.
+- **ONB-101** Service outputs that do not come from a gateway are `<Action><Resource>DTO` in `application/dtos/output`, named after the response they build with the suffix swapped (`GetPersonDTO` → `GetPersonResponse`), and the response uses `fromDTO`.
 - **ONB-102** An option backed by a closed list that only has to be sent back to a provider, such as the company type, is a typed enum in the schema instead of a service rule.
 - **ONB-103** `GET /onboarding/auth/me` answers who is logged in from headers the backoffice gateway takes from the already validated token: `selected-user-key` (the `person_key` of the person, required).
 - **ONB-104** `selected-agent-key` is the `legal_person_key` of the organizer's company (optional: absent for the admin) and `selected-user-roles` is the realm roles separated by commas (required, split without filtering).
@@ -46,3 +46,4 @@ paths:
 - **ONB-109** `findByPersonKey` on `LegalPersonRepository` receives the `person_key` of the legal person, which is the `legal_person_key`.
 - **ONB-110** Authentication routes (`/onboarding/auth/login`, `/refresh`, `/logout`) only relay the identity provider session: the tokens issued by Keycloak go back untouched in `CreateSessionResponse`.
 - **ONB-111** `invalid_grant` becomes 401 `GEN00401` (`InvalidCredentialsException` on login, `InvalidRefreshTokenException` on refresh and logout).
+- **ONB-271** A response root carries the fields of the route's entity; fields of another entity go in a nested object named after it, and no column repeats a key to flatten a response.

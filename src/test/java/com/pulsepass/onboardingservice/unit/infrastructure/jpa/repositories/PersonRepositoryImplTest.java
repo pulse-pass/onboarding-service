@@ -33,7 +33,7 @@ class PersonRepositoryImplTest {
     @Test
     void save_domain_savesEntityAndReturnsMappedDomain() {
         var domain = new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW);
+                "12345678000195", "Acme", NOW, NOW);
         when(jpaRepository.save(any(PersonEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
         var saved = repository.save(domain);
@@ -47,7 +47,7 @@ class PersonRepositoryImplTest {
     @Test
     void findByDocumentNumber_existing_returnsMappedDomain() {
         var person = new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW);
+                "12345678000195", "Acme", NOW, NOW);
         when(jpaRepository.findByDocumentNumber("12345678000195"))
                 .thenReturn(Optional.of(PersonEntity.fromDomain(person)));
 
@@ -65,19 +65,12 @@ class PersonRepositoryImplTest {
     @Test
     void findByPersonKey_existing_returnsMappedDomain() {
         var person = new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW);
+                "12345678000195", "Acme", NOW, NOW);
         when(jpaRepository.findByPersonKey("person-key"))
                 .thenReturn(Optional.of(PersonEntity.fromDomain(person)));
 
         assertThat(repository.findByPersonKey("person-key")).get()
                 .extracting(Person::getDocumentNumber).isEqualTo("12345678000195");
-    }
-
-    @Test
-    void findByEmail_missing_returnsEmpty() {
-        when(jpaRepository.findByEmail("a@mail.com")).thenReturn(Optional.empty());
-
-        assertThat(repository.findByEmail("a@mail.com")).isEmpty();
     }
 
     @Test

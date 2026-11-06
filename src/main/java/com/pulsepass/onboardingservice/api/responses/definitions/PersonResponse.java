@@ -2,19 +2,17 @@ package com.pulsepass.onboardingservice.api.responses.definitions;
 
 import com.pulsepass.onboardingservice.domain.entities.Person;
 
-public record LegalPersonOwnerResponse(
+public record PersonResponse(
         String personKey,
-        String name,
         String documentNumber,
-        String email
+        String name
 ) {
 
-    public static LegalPersonOwnerResponse fromEntity(Person person) {
-        return new LegalPersonOwnerResponse(
+    public static PersonResponse fromEntity(Person person) {
+        return new PersonResponse(
                 person.getPersonKey(),
-                person.getName(),
                 person.getDocumentNumber(),
-                person.getEmail()
+                person.getName()
         );
     }
 }

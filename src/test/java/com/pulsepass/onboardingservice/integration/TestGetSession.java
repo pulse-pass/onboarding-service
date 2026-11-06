@@ -24,7 +24,7 @@ class TestGetSession extends BaseIntegrationTest {
     @SuppressWarnings("unchecked")
     void getSession_organizerHeaders_returnsPersonRolesAndLegalPerson() {
         String cpf = CpfGenerator.generateCpf();
-        String legalPersonKey = SetupTools.createLegalPerson(cpf).getString("person_key");
+        String legalPersonKey = SetupTools.createLegalPerson(cpf).getString("person.person_key");
         List<Map<String, Object>> users = MockTools.retrieveRequests("POST", "/admin/realms/pulse-pass/users");
         Map<String, Object> userRequestBody = (Map<String, Object>) users.get(0).get("body");
         JsonPath user = new JsonPath(mapper.writeValueAsString(userRequestBody.get("json")));
@@ -162,7 +162,7 @@ class TestGetSession extends BaseIntegrationTest {
         JsonPath user = new JsonPath(mapper.writeValueAsString(userRequestBody.get("json")));
         String personKey = user.getString("attributes.person_key[0]");
         String otherLegalPersonKey = SetupTools.createLegalPerson(CpfGenerator.generateCpf())
-                .getString("person_key");
+                .getString("person.person_key");
         MockTools.clearMocker();
 
         Response response = given()

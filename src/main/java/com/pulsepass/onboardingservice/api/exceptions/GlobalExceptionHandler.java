@@ -8,11 +8,11 @@ import com.pulsepass.onboardingservice.domain.exceptions.InvalidNaturalPersonDoc
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidSessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
-import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundException;
+import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonEmailAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.MissingSelectedAgentKeyException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
-import com.pulsepass.onboardingservice.domain.exceptions.PersonEmailAlreadyExistsException;
+import com.pulsepass.onboardingservice.domain.exceptions.PersonNotFoundException;
 import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.UnauthorizedInternalRequestException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
@@ -43,7 +43,7 @@ public class GlobalExceptionHandler {
 
     private static final Map<Class<? extends DomainException>, HttpStatus> STATUS_MAP = Map.ofEntries(
             Map.entry(LegalPersonAlreadyExistsException.class, HttpStatus.CONFLICT),
-            Map.entry(PersonEmailAlreadyExistsException.class, HttpStatus.CONFLICT),
+            Map.entry(LegalPersonEmailAlreadyExistsException.class, HttpStatus.CONFLICT),
             Map.entry(NaturalPersonAlreadyExistsException.class, HttpStatus.CONFLICT),
             Map.entry(InvalidLegalPersonDocumentException.class, HttpStatus.BAD_REQUEST),
             Map.entry(InvalidNaturalPersonDocumentException.class, HttpStatus.BAD_REQUEST),
@@ -54,7 +54,7 @@ public class GlobalExceptionHandler {
             Map.entry(InvalidRefreshTokenException.class, HttpStatus.UNAUTHORIZED),
             Map.entry(SessionException.class, HttpStatus.UNPROCESSABLE_CONTENT),
             Map.entry(InvalidSessionException.class, HttpStatus.UNAUTHORIZED),
-            Map.entry(LegalPersonNotFoundException.class, HttpStatus.NOT_FOUND),
+            Map.entry(PersonNotFoundException.class, HttpStatus.NOT_FOUND),
             Map.entry(MissingSelectedAgentKeyException.class, HttpStatus.UNAUTHORIZED),
             Map.entry(UnauthorizedInternalRequestException.class, HttpStatus.UNAUTHORIZED));
 

@@ -6,6 +6,7 @@ public class NaturalPerson {
 
     private Long id;
     private Person person;
+    private String email;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -13,19 +14,23 @@ public class NaturalPerson {
     }
 
     public NaturalPerson(
-            Person person
+            Person person,
+            String email
     ) {
         this.person = person;
+        this.email = email;
     }
 
     public NaturalPerson(
             Long id,
             Person person,
+            String email,
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
         this.id = id;
         this.person = person;
+        this.email = email;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -44,6 +49,14 @@ public class NaturalPerson {
 
     public void setPerson(Person person) {
         this.person = person;
+    }
+
+    public String getEmail() {
+        return this.email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public LocalDateTime getCreatedAt() {

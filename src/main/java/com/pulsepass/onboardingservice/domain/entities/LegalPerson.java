@@ -7,6 +7,7 @@ public class LegalPerson {
 
     private Long id;
     private Person person;
+    private String email;
     private LegalPersonAddress legalPersonAddress;
     private LegalPersonCompanyType legalPersonCompanyType;
     private BigDecimal monthlyRevenueAmount;
@@ -18,11 +19,13 @@ public class LegalPerson {
 
     public LegalPerson(
             Person person,
+            String email,
             LegalPersonAddress legalPersonAddress,
             LegalPersonCompanyType legalPersonCompanyType,
             BigDecimal monthlyRevenueAmount
     ) {
         this.person = person;
+        this.email = email;
         this.legalPersonAddress = legalPersonAddress;
         this.legalPersonCompanyType = legalPersonCompanyType;
         this.monthlyRevenueAmount = monthlyRevenueAmount;
@@ -31,6 +34,7 @@ public class LegalPerson {
     public LegalPerson(
             Long id,
             Person person,
+            String email,
             LegalPersonAddress legalPersonAddress,
             LegalPersonCompanyType legalPersonCompanyType,
             BigDecimal monthlyRevenueAmount,
@@ -39,6 +43,7 @@ public class LegalPerson {
     ) {
         this.id = id;
         this.person = person;
+        this.email = email;
         this.legalPersonAddress = legalPersonAddress;
         this.legalPersonCompanyType = legalPersonCompanyType;
         this.monthlyRevenueAmount = monthlyRevenueAmount;
@@ -60,6 +65,14 @@ public class LegalPerson {
 
     public void setPerson(Person person) {
         this.person = person;
+    }
+
+    public String getEmail() {
+        return this.email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public LegalPersonAddress getLegalPersonAddress() {

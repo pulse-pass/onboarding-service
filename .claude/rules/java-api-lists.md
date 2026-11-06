@@ -24,3 +24,4 @@ paths:
 - **ONB-062** A domain table list is ordered by `id` (`Sort.by(Sort.Order.asc("id"))`) and the item exposes the `enumerator` under the table name and the `<table>_description`.
 - **ONB-063** A list route resolved by the token reads `selected-agent-key` and always filters by it.
 - **ONB-065** An item fetched by its own key returns the object or 404; with `selected-agent-key`, a key different from the token's also answers 404 (same `<X>NotFoundException`, never revealing the existence).
+- **ONB-273** A list scoped by a parent resource in the path (`GET /onboarding/legal_persons/{legal_person_key}/collaborators`) is still a list route: the public one validates `selected-agent-key` (ONB-064) and answers 404 (`PersonNotFoundException`) when the path key differs from it, the internal one validates the token or admin first, and both take the fixed-value filter as the domain enum (`collaborator_role`) and answer an empty `data` when the parent has no items.

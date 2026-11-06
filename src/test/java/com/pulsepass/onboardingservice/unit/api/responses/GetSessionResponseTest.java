@@ -11,14 +11,15 @@ import org.junit.jupiter.api.Test;
 
 class GetSessionResponseTest {
 
-    private static final Person OWNER = new Person("person-key", null, "52998224725", "Bianca Torres", "b@mail.com");
+    private static final Person OWNER = new Person("person-key", null, "52998224725", "Bianca Torres");
 
     @Test
     void fromDTO_withLegalPerson_mapsAllFields() {
-        var company = new Person("legal-person-key", null, "12345678000195", "Acme", "acme@mail.com");
+        var company = new Person("legal-person-key", null, "12345678000195", "Acme");
 
-        var response = GetSessionResponse.fromDTO(
-                new GetSessionDTO(OWNER, List.of("organizer"), new LegalPerson(company, null, null, null)));
+        var legalPerson = new LegalPerson(company, "acme@mail.com", null, null, null);
+
+        var response = GetSessionResponse.fromDTO(new GetSessionDTO(OWNER, List.of("organizer"), legalPerson));
 
         assertThat(response.personKey()).isEqualTo("person-key");
         assertThat(response.name()).isEqualTo("Bianca Torres");

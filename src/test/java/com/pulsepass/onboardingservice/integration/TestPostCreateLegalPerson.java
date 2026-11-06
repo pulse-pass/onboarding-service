@@ -75,11 +75,14 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                     .extract().response();
 
         assertThat(response.statusCode()).isEqualTo(201);
-        String personKey = response.jsonPath().getString("person_key");
+        String personKey = response.jsonPath().getString("person.person_key");
         assertThat(UUID.fromString(personKey)).isNotNull();
-        assertThat(response.jsonPath().getString("document_number")).isEqualTo(cnpj);
-        assertThat(response.jsonPath().getString("name")).isEqualTo("Lenha Produções Artísticas Ltda");
+        assertThat(response.jsonPath().getString("person.document_number")).isEqualTo(cnpj);
+        assertThat(response.jsonPath().getString("person.name")).isEqualTo("Lenha Produções Artísticas Ltda");
         assertThat(response.jsonPath().getString("email")).endsWith("@lenha.com.br");
+        assertThat(response.jsonPath().getString("person_key")).isNull();
+        assertThat(response.jsonPath().getString("document_number")).isNull();
+        assertThat(response.jsonPath().getString("name")).isNull();
 
         List<Map<String, Object>> users = MockTools.retrieveRequests(
                 "POST", "/admin/realms/pulse-pass/users");
@@ -2861,28 +2864,31 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                     .extract().response();
 
         assertThat(response.statusCode()).isEqualTo(201);
-        String personKey = response.jsonPath().getString("person_key");
+        String personKey = response.jsonPath().getString("person.person_key");
         assertThat(response.jsonPath().getString("legal_person_company_type")).isNull();
         assertThat(response.jsonPath().getString("legal_person_address")).isNull();
 
         Response internalResponse = given()
                     .header("internal-token", internalToken)
                 .when()
-                    .get("/onboarding/internal/legal_persons/{legal_person_key}", personKey)
+                    .get("/onboarding/internal/persons/{person_key}", personKey)
                 .then()
                     .extract().response();
 
         assertThat(internalResponse.statusCode()).isEqualTo(200);
-        assertThat(internalResponse.jsonPath().getString("legal_person_company_type")).isEqualTo("LIMITED");
-        assertThat(internalResponse.jsonPath().getDouble("monthly_revenue_amount")).isEqualTo(25000.00);
-        assertThat(internalResponse.jsonPath().getString("legal_person_address.legal_person_address_key"))
+        assertThat(internalResponse.jsonPath().getString("legal_person.legal_person_company_type"))
+                .isEqualTo("LIMITED");
+        assertThat(internalResponse.jsonPath().getDouble("legal_person.monthly_revenue_amount")).isEqualTo(25000.00);
+        assertThat(internalResponse.jsonPath().getString("legal_person.legal_person_address.legal_person_address_key"))
                 .isNotBlank();
-        assertThat(internalResponse.jsonPath().getString("legal_person_address.postal_code")).isEqualTo("90110220");
-        assertThat(internalResponse.jsonPath().getString("legal_person_address.street"))
+        assertThat(internalResponse.jsonPath().getString("legal_person.legal_person_address.postal_code"))
+                .isEqualTo("90110220");
+        assertThat(internalResponse.jsonPath().getString("legal_person.legal_person_address.street"))
                 .isEqualTo("Rua Ismael Chaves Barcelos");
-        assertThat(internalResponse.jsonPath().getString("legal_person_address.number")).isEqualTo("60");
-        assertThat(internalResponse.jsonPath().getString("legal_person_address.complement")).isEqualTo("Sala 2");
-        assertThat(internalResponse.jsonPath().getString("legal_person_address.neighborhood"))
+        assertThat(internalResponse.jsonPath().getString("legal_person.legal_person_address.number")).isEqualTo("60");
+        assertThat(internalResponse.jsonPath().getString("legal_person.legal_person_address.complement"))
+                .isEqualTo("Sala 2");
+        assertThat(internalResponse.jsonPath().getString("legal_person.legal_person_address.neighborhood"))
                 .isEqualTo("Praia de Belas");
     }
 
@@ -2928,22 +2934,23 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                     .extract().response();
 
         assertThat(response.statusCode()).isEqualTo(201);
-        String personKey = response.jsonPath().getString("person_key");
+        String personKey = response.jsonPath().getString("person.person_key");
         assertThat(response.jsonPath().getString("legal_person_company_type")).isNull();
         assertThat(response.jsonPath().getString("legal_person_address")).isNull();
 
         Response internalResponse = given()
                     .header("internal-token", internalToken)
                 .when()
-                    .get("/onboarding/internal/legal_persons/{legal_person_key}", personKey)
+                    .get("/onboarding/internal/persons/{person_key}", personKey)
                 .then()
                     .extract().response();
 
         assertThat(internalResponse.statusCode()).isEqualTo(200);
-        assertThat(internalResponse.jsonPath().getString("legal_person_company_type")).isEqualTo("MEI");
-        assertThat(internalResponse.jsonPath().getDouble("monthly_revenue_amount")).isEqualTo(1234.56);
-        assertThat(internalResponse.jsonPath().getString("legal_person_address.postal_code")).isEqualTo("90110220");
-        assertThat(internalResponse.jsonPath().getString("legal_person_address.complement")).isNull();
+        assertThat(internalResponse.jsonPath().getString("legal_person.legal_person_company_type")).isEqualTo("MEI");
+        assertThat(internalResponse.jsonPath().getDouble("legal_person.monthly_revenue_amount")).isEqualTo(1234.56);
+        assertThat(internalResponse.jsonPath().getString("legal_person.legal_person_address.postal_code"))
+                .isEqualTo("90110220");
+        assertThat(internalResponse.jsonPath().getString("legal_person.legal_person_address.complement")).isNull();
     }
 
     @Test
@@ -2985,9 +2992,18 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     }
 
     @Test
-    void createLegalPerson_sameEmailForCompanyAndOwner_returnsConflict() {
-        MockTools.clearMocker();
+    void createLegalPerson_sameEmailForCompanyAndOwner_returnsCreated() {
         String email = UUID.randomUUID() + "@lenha.com.br";
+        MockTools.clearMocker();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"),
+                Map.of("payload", Map.of("id", UUID.randomUUID().toString())));
+        String userId = UUID.randomUUID().toString();
+        MockTools.addExpectation("keycloak/post-users", Map.of(), Map.of(
+                "headers", Map.of("Location", List.of("/admin/realms/pulse-pass/users/" + userId))));
+        MockTools.addExpectation("keycloak/post-role_mappings", Map.of("user_id", userId));
+        MockTools.addExpectation("organization-service/post-organizations", Map.of(),
+                Map.of("payload", Map.of("organization_key", UUID.randomUUID().toString())));
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
@@ -2999,7 +3015,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                         "postal_code", "90110220",
                         "street", "Rua Ismael Chaves Barcelos",
                         "number", "60",
-                                                "neighborhood", "Praia de Belas"),
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(Map.of(
                         "collaborator_role", "OWNER",
                         "document_number", CpfGenerator.generateCpf(),
@@ -3016,12 +3032,12 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 .then()
                     .extract().response();
 
-        assertThat(response.statusCode()).isEqualTo(409);
-        assertThat(response.jsonPath().getString("code")).isEqualTo("ONB00010");
+        assertThat(response.statusCode()).isEqualTo(201);
+        assertThat(response.jsonPath().getString("email")).isEqualTo(email);
     }
 
     @Test
-    void createLegalPerson_emailOfExistingPerson_returnsConflict() {
+    void createLegalPerson_emailOfExistingLegalPerson_returnsConflict() {
         String email = SetupTools.createLegalPerson(CpfGenerator.generateCpf()).getString("email");
         MockTools.clearMocker();
         Map<String, Object> payload = Map.of(
@@ -3035,7 +3051,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                         "postal_code", "90110220",
                         "street", "Rua Ismael Chaves Barcelos",
                         "number", "60",
-                                                "neighborhood", "Praia de Belas"),
+                        "neighborhood", "Praia de Belas"),
                 "legal_person_collaborators", List.of(Map.of(
                         "collaborator_role", "OWNER",
                         "document_number", CpfGenerator.generateCpf(),
@@ -3054,6 +3070,96 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
 
         assertThat(response.statusCode()).isEqualTo(409);
         assertThat(response.jsonPath().getString("code")).isEqualTo("ONB00010");
+    }
+
+    @Test
+    void createLegalPerson_ownerEmailOfExistingOwner_returnsCreated() {
+        String ownerEmail = UUID.randomUUID() + "@lenha.com.br";
+        SetupTools.createLegalPerson(CpfGenerator.generateCpf(), UUID.randomUUID() + "@lenha.com.br", ownerEmail);
+        MockTools.clearMocker();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"),
+                Map.of("payload", Map.of("id", UUID.randomUUID().toString())));
+        String userId = UUID.randomUUID().toString();
+        MockTools.addExpectation("keycloak/post-users", Map.of(), Map.of(
+                "headers", Map.of("Location", List.of("/admin/realms/pulse-pass/users/" + userId))));
+        MockTools.addExpectation("keycloak/post-role_mappings", Map.of("user_id", userId));
+        MockTools.addExpectation("organization-service/post-organizations", Map.of(),
+                Map.of("payload", Map.of("organization_key", UUID.randomUUID().toString())));
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", ownerEmail,
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(201);
+    }
+
+    @Test
+    void createLegalPerson_companyEmailOfExistingOwner_returnsCreated() {
+        String ownerEmail = UUID.randomUUID() + "@lenha.com.br";
+        SetupTools.createLegalPerson(CpfGenerator.generateCpf(), UUID.randomUUID() + "@lenha.com.br", ownerEmail);
+        MockTools.clearMocker();
+        MockTools.addExpectation("keycloak/post-token");
+        MockTools.addExpectation("keycloak/get-role", Map.of("role_name", "organizer"),
+                Map.of("payload", Map.of("id", UUID.randomUUID().toString())));
+        String userId = UUID.randomUUID().toString();
+        MockTools.addExpectation("keycloak/post-users", Map.of(), Map.of(
+                "headers", Map.of("Location", List.of("/admin/realms/pulse-pass/users/" + userId))));
+        MockTools.addExpectation("keycloak/post-role_mappings", Map.of("user_id", userId));
+        MockTools.addExpectation("organization-service/post-organizations", Map.of(),
+                Map.of("payload", Map.of("organization_key", UUID.randomUUID().toString())));
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", ownerEmail,
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(Map.of(
+                        "collaborator_role", "OWNER",
+                        "document_number", CpfGenerator.generateCpf(),
+                        "name", "Bianca Torres",
+                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "password", "12345678")));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(201);
     }
 
     @Test
@@ -3143,20 +3249,21 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                     .extract().response();
 
         assertThat(response.statusCode()).isEqualTo(201);
-        String personKey = response.jsonPath().getString("person_key");
+        String personKey = response.jsonPath().getString("person.person_key");
         assertThat(response.jsonPath().getString("legal_person_company_type")).isNull();
         assertThat(response.jsonPath().getString("legal_person_address")).isNull();
 
         Response internalResponse = given()
                     .header("internal-token", internalToken)
                 .when()
-                    .get("/onboarding/internal/legal_persons/{legal_person_key}", personKey)
+                    .get("/onboarding/internal/persons/{person_key}", personKey)
                 .then()
                     .extract().response();
 
         assertThat(internalResponse.statusCode()).isEqualTo(200);
-        assertThat(internalResponse.jsonPath().getString("legal_person_company_type")).isEqualTo("INDIVIDUAL");
-        assertThat(internalResponse.jsonPath().getDouble("monthly_revenue_amount")).isEqualTo(0.01);
+        assertThat(internalResponse.jsonPath().getString("legal_person.legal_person_company_type"))
+                .isEqualTo("INDIVIDUAL");
+        assertThat(internalResponse.jsonPath().getDouble("legal_person.monthly_revenue_amount")).isEqualTo(0.01);
     }
 
     @Test
@@ -3202,19 +3309,20 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                     .extract().response();
 
         assertThat(response.statusCode()).isEqualTo(201);
-        String personKey = response.jsonPath().getString("person_key");
+        String personKey = response.jsonPath().getString("person.person_key");
         assertThat(response.jsonPath().getString("legal_person_company_type")).isNull();
         assertThat(response.jsonPath().getString("legal_person_address")).isNull();
 
         Response internalResponse = given()
                     .header("internal-token", internalToken)
                 .when()
-                    .get("/onboarding/internal/legal_persons/{legal_person_key}", personKey)
+                    .get("/onboarding/internal/persons/{person_key}", personKey)
                 .then()
                     .extract().response();
 
         assertThat(internalResponse.statusCode()).isEqualTo(200);
-        assertThat(internalResponse.jsonPath().getString("legal_person_company_type")).isEqualTo("ASSOCIATION");
-        assertThat(internalResponse.jsonPath().getDouble("monthly_revenue_amount")).isEqualTo(0.01);
+        assertThat(internalResponse.jsonPath().getString("legal_person.legal_person_company_type"))
+                .isEqualTo("ASSOCIATION");
+        assertThat(internalResponse.jsonPath().getDouble("legal_person.monthly_revenue_amount")).isEqualTo(0.01);
     }
 }

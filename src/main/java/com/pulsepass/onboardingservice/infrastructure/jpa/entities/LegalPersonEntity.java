@@ -25,6 +25,9 @@ public class LegalPersonEntity {
     @JoinColumn(name = "person_id", nullable = false)
     private PersonEntity person;
 
+    @Column(name = "email", nullable = false, unique = true, length = 255)
+    private String email;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "legal_person_address_id", nullable = false)
     private LegalPersonAddressEntity legalPersonAddress;
@@ -48,6 +51,7 @@ public class LegalPersonEntity {
     public LegalPersonEntity(
             Long id,
             PersonEntity person,
+            String email,
             LegalPersonAddressEntity legalPersonAddress,
             LegalPersonCompanyTypeEntity legalPersonCompanyType,
             BigDecimal monthlyRevenueAmount,
@@ -56,6 +60,7 @@ public class LegalPersonEntity {
     ) {
         this.id = id;
         this.person = person;
+        this.email = email;
         this.legalPersonAddress = legalPersonAddress;
         this.legalPersonCompanyType = legalPersonCompanyType;
         this.monthlyRevenueAmount = monthlyRevenueAmount;
@@ -67,6 +72,7 @@ public class LegalPersonEntity {
         return new LegalPersonEntity(
                 domain.getId(),
                 PersonEntity.fromDomain(domain.getPerson()),
+                domain.getEmail(),
                 LegalPersonAddressEntity.fromDomain(domain.getLegalPersonAddress()),
                 LegalPersonCompanyTypeEntity.fromDomain(domain.getLegalPersonCompanyType()),
                 domain.getMonthlyRevenueAmount(),
@@ -79,6 +85,7 @@ public class LegalPersonEntity {
         return new LegalPerson(
                 this.id,
                 this.person.toDomain(),
+                this.email,
                 this.legalPersonAddress.toDomain(),
                 this.legalPersonCompanyType.toDomain(),
                 this.monthlyRevenueAmount,

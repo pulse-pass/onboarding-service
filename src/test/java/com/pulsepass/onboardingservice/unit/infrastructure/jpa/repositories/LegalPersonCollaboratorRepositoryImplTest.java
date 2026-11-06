@@ -21,10 +21,15 @@ import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.JpaLegalP
 import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.LegalPersonCollaboratorRepositoryImpl;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 class LegalPersonCollaboratorRepositoryImplTest {
 
@@ -42,12 +47,12 @@ class LegalPersonCollaboratorRepositoryImplTest {
     @Test
     void save_domain_savesEntityAndReturnsMappedDomain() {
         var legal = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW),
+                "12345678000195", "Acme", NOW, NOW), "acme@mail.com",
                 new LegalPersonAddress(4L, "address-key", "90110220", "Rua Ismael Chaves Barcelos", "60",
                         "Sala 2", "Praia de Belas", NOW, NOW),
                 new LegalPersonCompanyType(5L, "LIMITED", NOW), new BigDecimal("25000.00"), NOW, NOW);
         var natural = new NaturalPerson(2L, new Person(2L, "owner-key", new PersonType(2L, "NATURAL", NOW),
-                "52998224725", "John Doe", "john@mail.com", NOW, NOW), NOW, NOW);
+                "52998224725", "John Doe", NOW, NOW), "john@mail.com", NOW, NOW);
         var collaborator = new LegalPersonCollaborator(4L, "collab-key", legal, natural,
                 new CollaboratorRole(1L, "OWNER", NOW), new LegalPersonCollaboratorStatus(1L, "ACTIVE", NOW), NOW, NOW);
         var domain = collaborator;
@@ -78,29 +83,39 @@ class LegalPersonCollaboratorRepositoryImplTest {
     }
 
     @Test
-    void findByLegalPersonKeyAndRole_match_returnsMappedDomain() {
+    @SuppressWarnings("unchecked")
+    void findAll_existingPage_returnsMappedDomainsUsingZeroBasedPageable() {
         var legal = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW),
+                "12345678000195", "Acme", NOW, NOW), "acme@mail.com",
                 new LegalPersonAddress(4L, "address-key", "90110220", "Rua Ismael Chaves Barcelos", "60",
                         "Sala 2", "Praia de Belas", NOW, NOW),
                 new LegalPersonCompanyType(5L, "LIMITED", NOW), new BigDecimal("25000.00"), NOW, NOW);
         var natural = new NaturalPerson(2L, new Person(2L, "owner-key", new PersonType(2L, "NATURAL", NOW),
-                "52998224725", "John Doe", "john@mail.com", NOW, NOW), NOW, NOW);
+                "52998224725", "John Doe", NOW, NOW), "john@mail.com", NOW, NOW);
         var domain = new LegalPersonCollaborator(4L, "collab-key", legal, natural,
                 new CollaboratorRole(1L, "OWNER", NOW), new LegalPersonCollaboratorStatus(1L, "ACTIVE", NOW), NOW, NOW);
-        when(jpaRepository.findByLegalPersonPersonPersonKeyAndCollaboratorRoleEnumerator("person-key", "OWNER"))
-                .thenReturn(Optional.of(LegalPersonCollaboratorEntity.fromDomain(domain)));
+        Page<LegalPersonCollaboratorEntity> page =
+                new PageImpl<>(List.of(LegalPersonCollaboratorEntity.fromDomain(domain)));
+        when(jpaRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
-        var result = repository.findByLegalPersonKeyAndRole("person-key", CollaboratorRoleEnum.OWNER);
+        var result = repository.findAll("person-key", CollaboratorRoleEnum.OWNER, 3, 10);
 
-        assertThat(result).get().usingRecursiveComparison().isEqualTo(domain);
+        var captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(jpaRepository).findAll(any(Specification.class), captor.capture());
+        assertThat(captor.getValue().getPageNumber()).isEqualTo(2);
+        assertThat(captor.getValue().getPageSize()).isEqualTo(10);
+        assertThat(captor.getValue().getSort()).containsExactly(
+                Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0)).usingRecursiveComparison().isEqualTo(domain);
     }
 
     @Test
-    void findByLegalPersonKeyAndRole_noMatch_returnsEmpty() {
-        when(jpaRepository.findByLegalPersonPersonPersonKeyAndCollaboratorRoleEnumerator("person-key", "OWNER"))
-                .thenReturn(Optional.empty());
+    @SuppressWarnings("unchecked")
+    void findAll_emptyPage_returnsEmptyList() {
+        when(jpaRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<LegalPersonCollaboratorEntity>(List.of()));
 
-        assertThat(repository.findByLegalPersonKeyAndRole("person-key", CollaboratorRoleEnum.OWNER)).isEmpty();
+        assertThat(repository.findAll("person-key", null, 1, 30)).isEmpty();
     }
 }

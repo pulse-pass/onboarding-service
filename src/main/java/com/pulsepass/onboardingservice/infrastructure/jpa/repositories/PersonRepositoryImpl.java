@@ -30,9 +30,4 @@ public class PersonRepositoryImpl implements PersonRepository {
     public Optional<Person> findByPersonKey(String personKey) {
         return jpaRepository.findByPersonKey(personKey).map(PersonEntity::toDomain);
     }
-
-    @Override
-    public Optional<Person> findByEmail(String email) {
-        return jpaRepository.findByEmail(email).map(PersonEntity::toDomain);
-    }
 }

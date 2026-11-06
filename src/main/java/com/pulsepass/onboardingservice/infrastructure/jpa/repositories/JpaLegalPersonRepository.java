@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface JpaLegalPersonRepository extends JpaRepository<LegalPersonEntity, Long> {
 
     Optional<LegalPersonEntity> findByPersonPersonKey(String personKey);
+
+    Optional<LegalPersonEntity> findByEmail(String email);
 }
