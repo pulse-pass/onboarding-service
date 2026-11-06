@@ -1,15 +1,11 @@
 package com.pulsepass.onboardingservice.infrastructure.jpa.repositories;
 
 import com.pulsepass.onboardingservice.infrastructure.jpa.entities.LegalPersonCollaboratorEntity;
-import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface JpaLegalPersonCollaboratorRepository extends JpaRepository<LegalPersonCollaboratorEntity, Long> {
-
-    Optional<LegalPersonCollaboratorEntity> findByLegalPersonPersonPersonKeyAndCollaboratorRoleEnumerator(
-            String legalPersonKey,
-            String enumerator
-    );
+public interface JpaLegalPersonCollaboratorRepository extends JpaRepository<LegalPersonCollaboratorEntity, Long>,
+        JpaSpecificationExecutor<LegalPersonCollaboratorEntity> {
 
     boolean existsByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
             String legalPersonKey,

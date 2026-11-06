@@ -18,6 +18,14 @@ public final class SetupTools {
     }
 
     public static JsonPath createLegalPerson(String ownerDocumentNumber) {
+        return createLegalPerson(
+                ownerDocumentNumber,
+                UUID.randomUUID() + "@lenha.com.br",
+                UUID.randomUUID() + "@lenha.com.br"
+        );
+    }
+
+    public static JsonPath createLegalPerson(String ownerDocumentNumber, String email, String ownerEmail) {
         MockTools.clearMocker();
         String userId = UUID.randomUUID().toString();
         MockTools.addExpectation("keycloak/post-token");
@@ -32,8 +40,8 @@ public final class SetupTools {
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
-                "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "email", email,
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -46,7 +54,7 @@ public final class SetupTools {
                         "collaborator_role", "OWNER",
                         "document_number", ownerDocumentNumber,
                         "name", "Bianca Torres",
-                        "email", UUID.randomUUID() + "@lenha.com.br",
+                        "email", ownerEmail,
                         "password", "12345678")));
 
         Response response = given()

@@ -16,7 +16,7 @@ class LegalPersonTest {
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 5, 6, 7, 8);
 
     private static Person person() {
-        return new Person("key", new PersonType(1L, "LEGAL", NOW), "12345678000195", "Acme", "acme@mail.com");
+        return new Person("key", new PersonType(1L, "LEGAL", NOW), "12345678000195", "Acme");
     }
 
     private static LegalPersonAddress address() {
@@ -34,10 +34,11 @@ class LegalPersonTest {
         var address = address();
         var companyType = companyType();
 
-        var entity = new LegalPerson(person, address, companyType, new BigDecimal("25000.00"));
+        var entity = new LegalPerson(person, "acme@mail.com", address, companyType, new BigDecimal("25000.00"));
 
         assertThat(entity.getId()).isNull();
         assertThat(entity.getPerson()).isSameAs(person);
+        assertThat(entity.getEmail()).isEqualTo("acme@mail.com");
         assertThat(entity.getLegalPersonAddress()).isSameAs(address);
         assertThat(entity.getLegalPersonCompanyType()).isSameAs(companyType);
         assertThat(entity.getMonthlyRevenueAmount()).isEqualByComparingTo("25000.00");
@@ -51,10 +52,12 @@ class LegalPersonTest {
         var address = address();
         var companyType = companyType();
 
-        var entity = new LegalPerson(7L, person, address, companyType, new BigDecimal("25000.00"), NOW, NOW);
+        var entity = new LegalPerson(
+                7L, person, "acme@mail.com", address, companyType, new BigDecimal("25000.00"), NOW, NOW);
 
         assertThat(entity.getId()).isEqualTo(7L);
         assertThat(entity.getPerson()).isSameAs(person);
+        assertThat(entity.getEmail()).isEqualTo("acme@mail.com");
         assertThat(entity.getLegalPersonAddress()).isSameAs(address);
         assertThat(entity.getLegalPersonCompanyType()).isSameAs(companyType);
         assertThat(entity.getMonthlyRevenueAmount()).isEqualByComparingTo("25000.00");
@@ -71,6 +74,7 @@ class LegalPersonTest {
 
         entity.setId(8L);
         entity.setPerson(person);
+        entity.setEmail("other@mail.com");
         entity.setLegalPersonAddress(address);
         entity.setLegalPersonCompanyType(companyType);
         entity.setMonthlyRevenueAmount(new BigDecimal("100.50"));
@@ -79,6 +83,7 @@ class LegalPersonTest {
 
         assertThat(entity.getId()).isEqualTo(8L);
         assertThat(entity.getPerson()).isSameAs(person);
+        assertThat(entity.getEmail()).isEqualTo("other@mail.com");
         assertThat(entity.getLegalPersonAddress()).isSameAs(address);
         assertThat(entity.getLegalPersonCompanyType()).isSameAs(companyType);
         assertThat(entity.getMonthlyRevenueAmount()).isEqualByComparingTo("100.50");

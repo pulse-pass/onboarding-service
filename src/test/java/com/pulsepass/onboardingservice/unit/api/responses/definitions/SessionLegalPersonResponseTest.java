@@ -11,9 +11,11 @@ class SessionLegalPersonResponseTest {
 
     @Test
     void fromEntity_legalPerson_mapsKeyAndName() {
-        var person = new Person("legal-person-key", null, "12345678000195", "Acme", "acme@mail.com");
+        var person = new Person("legal-person-key", null, "12345678000195", "Acme");
 
-        var response = SessionLegalPersonResponse.fromEntity(new LegalPerson(person, null, null, null));
+        var legalPerson = new LegalPerson(person, "acme@mail.com", null, null, null);
+
+        var response = SessionLegalPersonResponse.fromEntity(legalPerson);
 
         assertThat(response.legalPersonKey()).isEqualTo("legal-person-key");
         assertThat(response.name()).isEqualTo("Acme");

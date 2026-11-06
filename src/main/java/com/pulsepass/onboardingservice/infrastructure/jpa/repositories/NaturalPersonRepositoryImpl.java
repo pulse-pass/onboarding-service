@@ -3,6 +3,7 @@ package com.pulsepass.onboardingservice.infrastructure.jpa.repositories;
 import com.pulsepass.onboardingservice.domain.entities.NaturalPerson;
 import com.pulsepass.onboardingservice.domain.repositories.NaturalPersonRepository;
 import com.pulsepass.onboardingservice.infrastructure.jpa.entities.NaturalPersonEntity;
+import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -18,5 +19,10 @@ public class NaturalPersonRepositoryImpl implements NaturalPersonRepository {
     public NaturalPerson save(NaturalPerson naturalPerson) {
         var saved = jpaRepository.save(NaturalPersonEntity.fromDomain(naturalPerson));
         return saved.toDomain();
+    }
+
+    @Override
+    public Optional<NaturalPerson> findByPersonKey(String personKey) {
+        return jpaRepository.findByPersonPersonKey(personKey).map(NaturalPersonEntity::toDomain);
     }
 }

@@ -16,7 +16,7 @@ class PersonPhoneNumberEntityTest {
     @Test
     void fromDomainToDomain_allFields_roundTrips() {
         var person = new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW);
+                "12345678000195", "Acme", NOW, NOW);
         var domain = new PersonPhoneNumber(5L, "phone-key", person, "55", "11", "999999999", NOW, NOW);
 
         var result = PersonPhoneNumberEntity.fromDomain(domain).toDomain();

@@ -25,4 +25,9 @@ public class LegalPersonRepositoryImpl implements LegalPersonRepository {
     public Optional<LegalPerson> findByPersonKey(String personKey) {
         return jpaRepository.findByPersonPersonKey(personKey).map(LegalPersonEntity::toDomain);
     }
+
+    @Override
+    public Optional<LegalPerson> findByEmail(String email) {
+        return jpaRepository.findByEmail(email).map(LegalPersonEntity::toDomain);
+    }
 }

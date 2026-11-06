@@ -8,4 +8,6 @@ public interface LegalPersonRepository {
     LegalPerson save(LegalPerson legalPerson);
 
     Optional<LegalPerson> findByPersonKey(String personKey);
+
+    Optional<LegalPerson> findByEmail(String email);
 }

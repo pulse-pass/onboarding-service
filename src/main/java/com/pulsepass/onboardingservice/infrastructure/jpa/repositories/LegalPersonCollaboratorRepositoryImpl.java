@@ -4,7 +4,10 @@ import com.pulsepass.onboardingservice.domain.entities.CollaboratorRoleEnum;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaborator;
 import com.pulsepass.onboardingservice.domain.repositories.LegalPersonCollaboratorRepository;
 import com.pulsepass.onboardingservice.infrastructure.jpa.entities.LegalPersonCollaboratorEntity;
-import java.util.Optional;
+import com.pulsepass.onboardingservice.infrastructure.jpa.specifications.LegalPersonCollaboratorSpecification;
+import java.util.List;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -23,13 +26,19 @@ public class LegalPersonCollaboratorRepositoryImpl implements LegalPersonCollabo
     }
 
     @Override
-    public Optional<LegalPersonCollaborator> findByLegalPersonKeyAndRole(
+    public List<LegalPersonCollaborator> findAll(
             String legalPersonKey,
-            CollaboratorRoleEnum role
+            CollaboratorRoleEnum collaboratorRole,
+            int page,
+            int pageSize
     ) {
-        return jpaRepository
-                .findByLegalPersonPersonPersonKeyAndCollaboratorRoleEnumerator(legalPersonKey, role.name())
-                .map(LegalPersonCollaboratorEntity::toDomain);
+        var spec = LegalPersonCollaboratorSpecification.withFilters(legalPersonKey, collaboratorRole);
+        var pageable = PageRequest.of(
+                page - 1,
+                pageSize,
+                Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))
+        );
+        return jpaRepository.findAll(spec, pageable).map(LegalPersonCollaboratorEntity::toDomain).getContent();
     }
 
     @Override

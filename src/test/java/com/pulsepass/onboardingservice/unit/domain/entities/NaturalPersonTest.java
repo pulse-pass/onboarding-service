@@ -13,17 +13,18 @@ class NaturalPersonTest {
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 5, 6, 7, 8);
 
     private static Person person() {
-        return new Person("key", new PersonType(1L, "NATURAL", NOW), "12345678000195", "Acme", "acme@mail.com");
+        return new Person("key", new PersonType(1L, "NATURAL", NOW), "12345678000195", "Acme");
     }
 
     @Test
     void new_personOnly_exposesPersonAndNullId() {
         var person = person();
 
-        var entity = new NaturalPerson(person);
+        var entity = new NaturalPerson(person, "john@mail.com");
 
         assertThat(entity.getId()).isNull();
         assertThat(entity.getPerson()).isSameAs(person);
+        assertThat(entity.getEmail()).isEqualTo("john@mail.com");
         assertThat(entity.getCreatedAt()).isNull();
         assertThat(entity.getUpdatedAt()).isNull();
     }
@@ -32,10 +33,11 @@ class NaturalPersonTest {
     void new_allArgs_exposesValues() {
         var person = person();
 
-        var entity = new NaturalPerson(7L, person, NOW, NOW);
+        var entity = new NaturalPerson(7L, person, "john@mail.com", NOW, NOW);
 
         assertThat(entity.getId()).isEqualTo(7L);
         assertThat(entity.getPerson()).isSameAs(person);
+        assertThat(entity.getEmail()).isEqualTo("john@mail.com");
         assertThat(entity.getCreatedAt()).isEqualTo(NOW);
         assertThat(entity.getUpdatedAt()).isEqualTo(NOW);
     }
@@ -47,11 +49,13 @@ class NaturalPersonTest {
 
         entity.setId(8L);
         entity.setPerson(person);
+        entity.setEmail("other@mail.com");
         entity.setCreatedAt(NOW);
         entity.setUpdatedAt(NOW);
 
         assertThat(entity.getId()).isEqualTo(8L);
         assertThat(entity.getPerson()).isSameAs(person);
+        assertThat(entity.getEmail()).isEqualTo("other@mail.com");
         assertThat(entity.getCreatedAt()).isEqualTo(NOW);
         assertThat(entity.getUpdatedAt()).isEqualTo(NOW);
     }

@@ -9,6 +9,4 @@ public interface JpaPersonRepository extends JpaRepository<PersonEntity, Long> {
     Optional<PersonEntity> findByDocumentNumber(String documentNumber);
 
     Optional<PersonEntity> findByPersonKey(String personKey);
-
-    Optional<PersonEntity> findByEmail(String email);
 }

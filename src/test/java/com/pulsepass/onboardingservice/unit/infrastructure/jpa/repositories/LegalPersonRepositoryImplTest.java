@@ -37,7 +37,7 @@ class LegalPersonRepositoryImplTest {
     @Test
     void save_domain_savesEntityAndReturnsMappedDomain() {
         var domain = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW),
+                "12345678000195", "Acme", NOW, NOW), "acme@mail.com",
                 new LegalPersonAddress(4L, "address-key", "90110220", "Rua Ismael Chaves Barcelos", "60",
                         "Sala 2", "Praia de Belas", NOW, NOW),
                 new LegalPersonCompanyType(5L, "LIMITED", NOW), new BigDecimal("25000.00"), NOW, NOW);
@@ -54,7 +54,7 @@ class LegalPersonRepositoryImplTest {
     @Test
     void findByPersonKey_existing_returnsMappedDomain() {
         var domain = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW),
+                "12345678000195", "Acme", NOW, NOW), "acme@mail.com",
                 new LegalPersonAddress(4L, "address-key", "90110220", "Rua Ismael Chaves Barcelos", "60",
                         "Sala 2", "Praia de Belas", NOW, NOW),
                 new LegalPersonCompanyType(5L, "LIMITED", NOW), new BigDecimal("25000.00"), NOW, NOW);
@@ -70,5 +70,26 @@ class LegalPersonRepositoryImplTest {
         when(jpaRepository.findByPersonPersonKey("person-key")).thenReturn(Optional.empty());
 
         assertThat(repository.findByPersonKey("person-key")).isEmpty();
+    }
+
+    @Test
+    void findByEmail_existing_returnsMappedDomain() {
+        var domain = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
+                "12345678000195", "Acme", NOW, NOW), "acme@mail.com",
+                new LegalPersonAddress(4L, "address-key", "90110220", "Rua Ismael Chaves Barcelos", "60",
+                        "Sala 2", "Praia de Belas", NOW, NOW),
+                new LegalPersonCompanyType(5L, "LIMITED", NOW), new BigDecimal("25000.00"), NOW, NOW);
+        when(jpaRepository.findByEmail("acme@mail.com"))
+                .thenReturn(Optional.of(LegalPersonEntity.fromDomain(domain)));
+
+        assertThat(repository.findByEmail("acme@mail.com")).get()
+                .usingRecursiveComparison().isEqualTo(domain);
+    }
+
+    @Test
+    void findByEmail_missing_returnsEmpty() {
+        when(jpaRepository.findByEmail("acme@mail.com")).thenReturn(Optional.empty());
+
+        assertThat(repository.findByEmail("acme@mail.com")).isEmpty();
     }
 }

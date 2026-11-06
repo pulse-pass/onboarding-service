@@ -24,6 +24,9 @@ public class NaturalPersonEntity {
     @JoinColumn(name = "person_id", nullable = false)
     private PersonEntity person;
 
+    @Column(name = "email", nullable = false, length = 255)
+    private String email;
+
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -36,11 +39,13 @@ public class NaturalPersonEntity {
     public NaturalPersonEntity(
             Long id,
             PersonEntity person,
+            String email,
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
         this.id = id;
         this.person = person;
+        this.email = email;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -49,6 +54,7 @@ public class NaturalPersonEntity {
         return new NaturalPersonEntity(
                 domain.getId(),
                 PersonEntity.fromDomain(domain.getPerson()),
+                domain.getEmail(),
                 domain.getCreatedAt(),
                 domain.getUpdatedAt()
         );
@@ -58,6 +64,7 @@ public class NaturalPersonEntity {
         return new NaturalPerson(
                 this.id,
                 this.person.toDomain(),
+                this.email,
                 this.createdAt,
                 this.updatedAt
         );

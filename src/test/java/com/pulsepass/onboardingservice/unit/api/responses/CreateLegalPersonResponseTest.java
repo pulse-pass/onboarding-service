@@ -11,15 +11,15 @@ import org.junit.jupiter.api.Test;
 class CreateLegalPersonResponseTest {
 
     @Test
-    void fromEntity_legalPerson_mapsAllFields() {
+    void fromEntity_legalPerson_mapsEmailAndNestedPerson() {
         var person = new Person("person-key", new PersonType(1L, "LEGAL", null),
-                "12345678000195", "Acme", "acme@mail.com");
+                "12345678000195", "Acme");
 
-        var response = CreateLegalPersonResponse.fromEntity(new LegalPerson(person, null, null, null));
+        var response = CreateLegalPersonResponse.fromEntity(new LegalPerson(person, "acme@mail.com", null, null, null));
 
-        assertThat(response.personKey()).isEqualTo("person-key");
-        assertThat(response.documentNumber()).isEqualTo("12345678000195");
-        assertThat(response.name()).isEqualTo("Acme");
         assertThat(response.email()).isEqualTo("acme@mail.com");
+        assertThat(response.person().personKey()).isEqualTo("person-key");
+        assertThat(response.person().documentNumber()).isEqualTo("12345678000195");
+        assertThat(response.person().name()).isEqualTo("Acme");
     }
 }

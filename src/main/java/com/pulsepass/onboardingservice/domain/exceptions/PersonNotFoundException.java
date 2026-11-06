@@ -1,9 +1,9 @@
 package com.pulsepass.onboardingservice.domain.exceptions;
 
-public class LegalPersonNotFoundException extends DomainException {
+public class PersonNotFoundException extends DomainException {
 
-    public LegalPersonNotFoundException() {
-        super("Legal person not found");
+    public PersonNotFoundException() {
+        super("Person not found");
     }
 
     @Override
@@ -13,6 +13,6 @@ public class LegalPersonNotFoundException extends DomainException {
 
     @Override
     public String getMessageKey() {
-        return "error.legal_person.not_found";
+        return "error.person.not_found";
     }
 }

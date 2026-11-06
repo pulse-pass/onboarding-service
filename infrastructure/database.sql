@@ -19,13 +19,11 @@ CREATE TABLE IF NOT EXISTS onboarding.person (
     person_type_id   BIGINT        NOT NULL,
     document_number  VARCHAR(14)   NOT NULL,
     name             VARCHAR(255)  NOT NULL,
-    email            VARCHAR(255)  NOT NULL,
     created_at       TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     updated_at       TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     CONSTRAINT pk_person PRIMARY KEY (id),
     CONSTRAINT person_key_unique UNIQUE (person_key),
     CONSTRAINT person_document_number_unique UNIQUE (document_number),
-    CONSTRAINT person_email_unique UNIQUE (email),
     CONSTRAINT fk1_person FOREIGN KEY (person_type_id)
         REFERENCES onboarding.person_type (id)
 );
@@ -33,6 +31,7 @@ CREATE TABLE IF NOT EXISTS onboarding.person (
 CREATE TABLE IF NOT EXISTS onboarding.natural_person (
     id          BIGINT        NOT NULL AUTO_INCREMENT,
     person_id   BIGINT        NOT NULL,
+    email       VARCHAR(255)  NOT NULL,
     created_at  TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     updated_at  TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     CONSTRAINT pk_natural_person PRIMARY KEY (id),
@@ -41,13 +40,13 @@ CREATE TABLE IF NOT EXISTS onboarding.natural_person (
         REFERENCES onboarding.person (id)
 );
 
-INSERT IGNORE INTO onboarding.person (person_key, person_type_id, document_number, name, email)
-SELECT '00000000-0000-4000-8000-000000000001', id, '52998224725', 'Administrador PulsePass', 'admin@pulsepass.local'
+INSERT IGNORE INTO onboarding.person (person_key, person_type_id, document_number, name)
+SELECT '00000000-0000-4000-8000-000000000001', id, '52998224725', 'Administrador PulsePass'
 FROM onboarding.person_type
 WHERE enumerator = 'NATURAL';
 
-INSERT IGNORE INTO onboarding.natural_person (person_id)
-SELECT id
+INSERT IGNORE INTO onboarding.natural_person (person_id, email)
+SELECT id, 'admin@pulsepass.local'
 FROM onboarding.person
 WHERE person_key = '00000000-0000-4000-8000-000000000001';
 
@@ -81,11 +80,13 @@ CREATE TABLE IF NOT EXISTS onboarding.legal_person (
     person_id                       BIGINT         NOT NULL,
     legal_person_address_id         BIGINT         NOT NULL,
     legal_person_company_type_id    BIGINT         NOT NULL,
+    email                           VARCHAR(255)   NOT NULL,
     monthly_revenue_amount          DECIMAL(19,2)  NOT NULL,
     created_at                      TIMESTAMP(3)   NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     updated_at                      TIMESTAMP(3)   NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     CONSTRAINT pk_legal_person PRIMARY KEY (id),
     CONSTRAINT legal_person_person_id_unique UNIQUE (person_id),
+    CONSTRAINT legal_person_email_unique UNIQUE (email),
     CONSTRAINT legal_person_legal_person_address_id_unique UNIQUE (legal_person_address_id),
     CONSTRAINT fk1_legal_person FOREIGN KEY (person_id)
         REFERENCES onboarding.person (id),

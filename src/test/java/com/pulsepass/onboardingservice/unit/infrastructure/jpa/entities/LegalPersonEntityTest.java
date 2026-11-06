@@ -19,7 +19,7 @@ class LegalPersonEntityTest {
     @Test
     void fromDomainToDomain_allFields_roundTrips() {
         var domain = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW),
+                "12345678000195", "Acme", NOW, NOW), "acme@mail.com",
                 new LegalPersonAddress(4L, "address-key", "90110220", "Rua Ismael Chaves Barcelos", "60",
                         "Sala 2", "Praia de Belas", NOW, NOW),
                 new LegalPersonCompanyType(5L, "LIMITED", NOW), new BigDecimal("25000.00"), NOW, NOW);

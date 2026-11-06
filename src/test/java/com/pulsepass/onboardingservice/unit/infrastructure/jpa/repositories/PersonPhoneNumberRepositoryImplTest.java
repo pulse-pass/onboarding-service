@@ -34,7 +34,7 @@ class PersonPhoneNumberRepositoryImplTest {
     @Test
     void save_domain_savesEntityAndReturnsMappedDomain() {
         var person = new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW);
+                "12345678000195", "Acme", NOW, NOW);
         var domain = new PersonPhoneNumber(5L, "phone-key", person, "55", "11", "999999999", NOW, NOW);
         when(jpaRepository.save(any(PersonPhoneNumberEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -49,9 +49,9 @@ class PersonPhoneNumberRepositoryImplTest {
     @Test
     void findAllByPersonKey_existingPhones_returnsMappedDomains() {
         var person = new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW);
+                "12345678000195", "Acme", NOW, NOW);
         var first = new PersonPhoneNumber(5L, "phone-1", person, "55", "11", "999999999", NOW, NOW);
-        var second = new PersonPhoneNumber(6L, "phone-2", person, "55", "51", "30224180", NOW, NOW);
+        var second = new PersonPhoneNumber(6L, "phone-2", person, "55", "51", "999990000", NOW, NOW);
         when(jpaRepository.findAllByPersonPersonKeyOrderByIdAsc("person-key")).thenReturn(List.of(
                 PersonPhoneNumberEntity.fromDomain(first),
                 PersonPhoneNumberEntity.fromDomain(second)

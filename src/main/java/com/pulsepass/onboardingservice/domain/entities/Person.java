@@ -9,7 +9,6 @@ public class Person {
     private PersonType personType;
     private String documentNumber;
     private String name;
-    private String email;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -20,14 +19,12 @@ public class Person {
             String personKey,
             PersonType personType,
             String documentNumber,
-            String name,
-            String email
+            String name
     ) {
         this.personKey = personKey;
         this.personType = personType;
         this.documentNumber = documentNumber;
         this.name = name;
-        this.email = email;
     }
 
     public Person(
@@ -36,7 +33,6 @@ public class Person {
             PersonType personType,
             String documentNumber,
             String name,
-            String email,
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
@@ -45,7 +41,6 @@ public class Person {
         this.personType = personType;
         this.documentNumber = documentNumber;
         this.name = name;
-        this.email = email;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -88,14 +83,6 @@ public class Person {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getEmail() {
-        return this.email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public LocalDateTime getCreatedAt() {

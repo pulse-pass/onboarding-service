@@ -13,7 +13,7 @@ class PersonPhoneNumberTest {
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 5, 6, 7, 8);
 
     private static Person person() {
-        return new Person("key", new PersonType(1L, "LEGAL", NOW), "12345678000195", "Acme", "acme@mail.com");
+        return new Person("key", new PersonType(1L, "LEGAL", NOW), "12345678000195", "Acme");
     }
 
     @Test

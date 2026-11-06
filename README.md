@@ -30,7 +30,7 @@ Os dois modos podem rodar ao mesmo tempo.
   "document_number": "11222333000181",
   "name": "Lenha Produções Artísticas Ltda",
   "email": "contato@lenha.com.br",
-  "phone_number": { "country_code": "55", "area_code": "51", "number": "30224180" },
+  "phone_number": { "country_code": "55", "area_code": "51", "number": "999990000" },
   "legal_person_collaborators": [
     {
       "collaborator_role": "OWNER",
@@ -43,7 +43,14 @@ Os dois modos podem rodar ao mesmo tempo.
 }
 ```
 
-Os documentos vão só com dígitos, a lista de colaboradores tem exatamente um item e o papel deve ser `OWNER`. A resposta `201` traz apenas a pessoa jurídica (`person_key`, `document_number`, `name`, `email`), sem o dono nem o telefone. Se o Keycloak ou o `organization-service` falharem depois da gravação, a resposta é 422 (`ONB00006` ou `ONB00007`, com a mensagem para tentar novamente) e o erro vai para o log; o cadastro gravado não é desfeito, e repetir o mesmo CNPJ devolve `ONB00001`.
+Os documentos vão só com dígitos, a lista de colaboradores tem exatamente um item e o papel deve ser `OWNER`. A resposta `201` tem o formato `{email, person: {person_key, document_number, name}}`, sem o dono nem o telefone. Se o Keycloak ou o `organization-service` falharem depois da gravação, a resposta é 422 (`ONB00006` ou `ONB00007`, com a mensagem para tentar novamente) e o erro vai para o log; o cadastro gravado não é desfeito, e repetir o mesmo CNPJ devolve `ONB00001`.
+
+Demais rotas:
+
+- `GET /onboarding/persons/{person_key}`: devolve a pessoa (jurídica ou física) da própria sessão; exige `selected-user-key` e, para empresa, `selected-agent-key`. Pessoa inexistente ou fora do escopo devolve `ONB00009`.
+- `GET /onboarding/internal/persons/{person_key}`: mesma consulta para uso interno, com `internal-token` ou papel `admin`.
+- `GET /onboarding/legal_persons/{legal_person_key}/collaborators`: lista paginada de colaboradores da empresa do `selected-agent-key`; aceita `collaborator_role`, `page` (mínimo 1) e `page_size` (1 a 100, padrão 30). Resposta no formato `{data, pagination}`.
+- `GET /onboarding/internal/legal_persons/{legal_person_key}/collaborators`: mesma listagem para uso interno, com `internal-token` ou papel `admin`, com a pessoa física de cada colaborador.
 
 Erros, no formato `{ "title", "message", "code" }` (mensagem em inglês ou português, conforme `Accept-Language`):
 
@@ -61,6 +68,8 @@ Erros, no formato `{ "title", "message", "code" }` (mensagem em inglês ou portu
 | `ONB00005` | 400 | Papel do colaborador diferente de `OWNER` |
 | `ONB00006` | 422 | Falha ao criar o usuário no Keycloak |
 | `ONB00007` | 422 | Falha ao criar a organização no `organization-service` |
+| `ONB00009` | 404 | Pessoa não encontrada |
+| `ONB00010` | 409 | E-mail já cadastrado em outra empresa |
 
 A saúde do serviço fica em `/actuator/health`.
 

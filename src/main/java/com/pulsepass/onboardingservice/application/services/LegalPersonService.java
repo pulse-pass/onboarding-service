@@ -2,8 +2,6 @@ package com.pulsepass.onboardingservice.application.services;
 
 import com.pulsepass.onboardingservice.application.dtos.input.CreateLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.LegalPersonCollaboratorDTO;
-import com.pulsepass.onboardingservice.application.dtos.output.GetInternalLegalPersonDTO;
-import com.pulsepass.onboardingservice.application.dtos.output.GetLegalPersonDTO;
 import com.pulsepass.onboardingservice.common.DocumentHandlers;
 import com.pulsepass.onboardingservice.domain.UnitOfWork;
 import com.pulsepass.onboardingservice.domain.entities.CollaboratorRole;
@@ -15,7 +13,6 @@ import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorHi
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorStatus;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorStatusEnum;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCompanyType;
-import com.pulsepass.onboardingservice.domain.entities.LegalPersonCompanyTypeEnum;
 import com.pulsepass.onboardingservice.domain.entities.NaturalPerson;
 import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.entities.PersonPhoneNumber;
@@ -25,10 +22,9 @@ import com.pulsepass.onboardingservice.domain.exceptions.InvalidCollaboratorRole
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidLegalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidNaturalPersonDocumentException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
-import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundException;
+import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonEmailAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
-import com.pulsepass.onboardingservice.domain.exceptions.PersonEmailAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.IdentityProviderGateway;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateUserInputDTO;
@@ -117,8 +113,7 @@ public class LegalPersonService {
                     UUID.randomUUID().toString(),
                     legalType,
                     dto.documentNumber(),
-                    dto.name(),
-                    dto.email()
+                    dto.name()
             ));
         } catch (DataIntegrityViolationException e) {
             logger.warn("LegalPersonService.createLegalPerson - Unique violation on CNPJ", e);
@@ -132,12 +127,19 @@ public class LegalPersonService {
                 dto.legalPersonAddress().complement(),
                 dto.legalPersonAddress().neighborhood()
         ));
-        LegalPerson legalPerson = legalPersonRepository.save(new LegalPerson(
-                person,
-                address,
-                companyType,
-                dto.monthlyRevenueAmount()
-        ));
+        LegalPerson legalPerson;
+        try {
+            legalPerson = legalPersonRepository.save(new LegalPerson(
+                    person,
+                    dto.email(),
+                    address,
+                    companyType,
+                    dto.monthlyRevenueAmount()
+            ));
+        } catch (DataIntegrityViolationException e) {
+            logger.warn("LegalPersonService.createLegalPerson - Unique violation on company email", e);
+            throw new LegalPersonEmailAlreadyExistsException();
+        }
         personPhoneNumberRepository.save(new PersonPhoneNumber(
                 UUID.randomUUID().toString(),
                 person,
@@ -155,14 +157,13 @@ public class LegalPersonService {
                     UUID.randomUUID().toString(),
                     naturalType,
                     owner.documentNumber(),
-                    owner.name(),
-                    owner.email()
+                    owner.name()
             ));
         } catch (DataIntegrityViolationException e) {
             logger.warn("LegalPersonService.createLegalPerson - Unique violation on CPF", e);
             throw new NaturalPersonAlreadyExistsException();
         }
-        return naturalPersonRepository.save(new NaturalPerson(person));
+        return naturalPersonRepository.save(new NaturalPerson(person, owner.email()));
     }
 
     private void createUser(LegalPersonCollaboratorDTO owner, String legalPersonKey, String ownerKey) {
@@ -233,19 +234,9 @@ public class LegalPersonService {
             throw new NaturalPersonAlreadyExistsException();
         }
 
-        if (dto.email().equalsIgnoreCase(owner.email())) {
-            logger.warn("LegalPersonService.createLegalPerson - Company and owner share the same email");
-            throw new PersonEmailAlreadyExistsException();
-        }
-
-        if (personRepository.findByEmail(dto.email()).isPresent()) {
-            logger.warn("LegalPersonService.createLegalPerson - Person already exists for company email");
-            throw new PersonEmailAlreadyExistsException();
-        }
-
-        if (personRepository.findByEmail(owner.email()).isPresent()) {
-            logger.warn("LegalPersonService.createLegalPerson - Person already exists for owner email");
-            throw new PersonEmailAlreadyExistsException();
+        if (legalPersonRepository.findByEmail(dto.email()).isPresent()) {
+            logger.warn("LegalPersonService.createLegalPerson - Legal person already exists for company email");
+            throw new LegalPersonEmailAlreadyExistsException();
         }
 
         PersonType legalType = personTypeRepository
@@ -286,46 +277,5 @@ public class LegalPersonService {
 
         logger.info("LegalPersonService.createLegalPerson - Successfully finished");
         return legalPerson;
-    }
-
-    public GetLegalPersonDTO getLegalPerson(String legalPersonKey, String selectedAgentKey) {
-        logger.info("LegalPersonService.getLegalPerson - Starting");
-
-        if (!legalPersonKey.equals(selectedAgentKey)) {
-            logger.warn("LegalPersonService.getLegalPerson - Legal person key differs from the selected agent");
-            throw new LegalPersonNotFoundException();
-        }
-
-        LegalPerson legalPerson = legalPersonRepository
-                .findByPersonKey(legalPersonKey)
-                .orElseThrow(LegalPersonNotFoundException::new);
-        LegalPersonCollaborator ownerCollaborator = legalPersonCollaboratorRepository
-                .findByLegalPersonKeyAndRole(legalPersonKey, CollaboratorRoleEnum.OWNER)
-                .orElseThrow(() -> new IllegalStateException("Legal person owner not found"));
-
-        logger.info("LegalPersonService.getLegalPerson - Successfully finished");
-        return new GetLegalPersonDTO(legalPerson.getPerson(), ownerCollaborator.getNaturalPerson().getPerson());
-    }
-
-    public GetInternalLegalPersonDTO getInternalLegalPerson(String legalPersonKey) {
-        logger.info("LegalPersonService.getInternalLegalPerson - Starting");
-
-        LegalPerson legalPerson = legalPersonRepository
-                .findByPersonKey(legalPersonKey)
-                .orElseThrow(LegalPersonNotFoundException::new);
-        LegalPersonCollaborator ownerCollaborator = legalPersonCollaboratorRepository
-                .findByLegalPersonKeyAndRole(legalPersonKey, CollaboratorRoleEnum.OWNER)
-                .orElseThrow(() -> new IllegalStateException("Legal person owner not found"));
-        List<PersonPhoneNumber> phoneNumbers = personPhoneNumberRepository.findAllByPersonKey(legalPersonKey);
-
-        logger.info("LegalPersonService.getInternalLegalPerson - Successfully finished");
-        return new GetInternalLegalPersonDTO(
-                legalPerson.getPerson(),
-                ownerCollaborator.getNaturalPerson().getPerson(),
-                phoneNumbers,
-                legalPerson.getLegalPersonCompanyType(),
-                legalPerson.getMonthlyRevenueAmount(),
-                legalPerson.getLegalPersonAddress()
-        );
     }
 }

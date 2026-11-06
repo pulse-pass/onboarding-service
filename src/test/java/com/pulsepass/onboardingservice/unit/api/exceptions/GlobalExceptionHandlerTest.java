@@ -15,11 +15,11 @@ import com.pulsepass.onboardingservice.domain.exceptions.InvalidNaturalPersonDoc
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidSessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExistsException;
-import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundException;
+import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonEmailAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.MissingSelectedAgentKeyException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
-import com.pulsepass.onboardingservice.domain.exceptions.PersonEmailAlreadyExistsException;
+import com.pulsepass.onboardingservice.domain.exceptions.PersonNotFoundException;
 import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.UnauthorizedInternalRequestException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
@@ -60,8 +60,8 @@ class GlobalExceptionHandlerTest {
         messages.addMessage("error.bad_request", Locale.ENGLISH, "bad request");
         messages.addMessage("error.legal_person.already_exists", Locale.ENGLISH, "cnpj exists");
         messages.addMessage("error.natural_person.already_exists", Locale.ENGLISH, "cpf exists");
-        messages.addMessage("error.person.email_already_exists", Locale.ENGLISH, "email exists");
-        messages.addMessage("error.legal_person.not_found", Locale.ENGLISH, "company not found");
+        messages.addMessage("error.legal_person.email_already_exists", Locale.ENGLISH, "email exists");
+        messages.addMessage("error.person.not_found", Locale.ENGLISH, "person not found");
         messages.addMessage("error.legal_person.invalid_document", Locale.ENGLISH, "invalid cnpj");
         messages.addMessage("error.natural_person.invalid_document", Locale.ENGLISH, "invalid cpf");
         messages.addMessage("error.legal_person_collaborator.invalid_role", Locale.ENGLISH, "invalid role");
@@ -105,21 +105,21 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleDomain_personEmailAlreadyExists_returns409WithOnb00010() {
-        var response = handler.handleDomain(new PersonEmailAlreadyExistsException());
+    void handleDomain_legalPersonEmailAlreadyExists_returns409WithOnb00010() {
+        var response = handler.handleDomain(new LegalPersonEmailAlreadyExistsException());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).isEqualTo(new ErrorResponse("Conflict", "email exists", "ONB00010", List.of()));
     }
 
     @Test
-    void handleDomain_legalPersonNotFound_returns404WithOnb00009() {
-        var response = handler.handleDomain(new LegalPersonNotFoundException());
+    void handleDomain_personNotFound_returns404WithOnb00009() {
+        var response = handler.handleDomain(new PersonNotFoundException());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isEqualTo(new ErrorResponse(
                 "Not Found",
-                "company not found",
+                "person not found",
                 "ONB00009",
                 List.of()
         ));
