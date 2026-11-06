@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Pattern;
 public record PersonPhoneNumberSchema(
         @NotBlank @Pattern(regexp = "^\\d{1,3}$") String countryCode,
         @NotBlank @Pattern(regexp = "^\\d{2}$") String areaCode,
-        @NotBlank @Pattern(regexp = "^\\d{8,9}$") String number
+        @NotBlank @Pattern(regexp = "^9\\d{8}$") String number
 ) {
 
     public PersonPhoneNumberDTO toDTO() {

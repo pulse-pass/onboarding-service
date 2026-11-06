@@ -30,7 +30,7 @@ Os dois modos podem rodar ao mesmo tempo.
   "document_number": "11222333000181",
   "name": "Lenha Produções Artísticas Ltda",
   "email": "contato@lenha.com.br",
-  "phone_number": { "country_code": "55", "area_code": "51", "number": "30224180" },
+  "phone_number": { "country_code": "55", "area_code": "51", "number": "999990000" },
   "legal_person_collaborators": [
     {
       "collaborator_role": "OWNER",

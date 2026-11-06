@@ -37,7 +37,7 @@ class TestGetInternalPerson extends BaseIntegrationTest {
         assertThat(response.jsonPath().getList("phone_numbers")).hasSize(1);
         assertThat(response.jsonPath().getString("phone_numbers[0].country_code")).isEqualTo("55");
         assertThat(response.jsonPath().getString("phone_numbers[0].area_code")).isEqualTo("51");
-        assertThat(response.jsonPath().getString("phone_numbers[0].number")).isEqualTo("30224180");
+        assertThat(response.jsonPath().getString("phone_numbers[0].number")).isEqualTo("999990000");
         assertThat(response.jsonPath().getString("legal_person.email")).endsWith("@lenha.com.br");
         assertThat(response.jsonPath().getString("legal_person.legal_person_company_type")).isEqualTo("LIMITED");
         assertThat(response.jsonPath().getDouble("legal_person.monthly_revenue_amount")).isEqualTo(25000.00);

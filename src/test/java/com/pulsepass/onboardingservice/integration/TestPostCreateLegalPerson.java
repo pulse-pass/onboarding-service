@@ -30,7 +30,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         String cpf = CpfGenerator.generateCpf();
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
@@ -127,7 +127,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -174,7 +174,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> secondPhoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> secondCollaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -218,7 +218,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         String cpf = CpfGenerator.generateCpf();
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
@@ -265,7 +265,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> secondPhoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> secondCollaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", cpf,
@@ -307,7 +307,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -352,7 +352,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         String cpf = CpfGenerator.generateCpf();
         char last = cpf.charAt(10);
         String invalid = cpf.substring(0, 10) + (last == '0' ? '1' : '0');
@@ -397,7 +397,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "MEMBER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -439,7 +439,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -481,7 +481,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -523,7 +523,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -565,7 +565,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -607,7 +607,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -649,7 +649,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -692,7 +692,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf().substring(0, 10),
@@ -735,7 +735,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "+55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -778,7 +778,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "5511",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -821,7 +821,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "511",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -902,12 +902,98 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
     }
 
     @Test
+    void createLegalPerson_landlineNumber_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "30224180");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(collaborator));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "phone_number.number", "error", "INVALID_FORMAT"));
+    }
+
+    @Test
+    void createLegalPerson_nineDigitsNotStartingWithNine_returnsBadRequest() {
+        MockTools.clearMocker();
+        Map<String, Object> phoneNumber = Map.of(
+                "country_code", "55",
+                "area_code", "51",
+                "number", "302241800");
+        Map<String, Object> collaborator = Map.of(
+                "collaborator_role", "OWNER",
+                "document_number", CpfGenerator.generateCpf(),
+                "name", "Bianca Torres",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "password", "12345678");
+        Map<String, Object> payload = Map.of(
+                "document_number", CnpjGenerator.generateCnpj(),
+                "name", "Lenha Produções Artísticas Ltda",
+                "email", UUID.randomUUID() + "@lenha.com.br",
+                "phone_number", phoneNumber,
+                "legal_person_company_type", "LIMITED",
+                "monthly_revenue_amount", 25000.00,
+                "legal_person_address", Map.of(
+                        "postal_code", "90110220",
+                        "street", "Rua Ismael Chaves Barcelos",
+                        "number", "60",
+                        "complement", "Sala 2",
+                        "neighborhood", "Praia de Belas"),
+                "legal_person_collaborators", List.of(collaborator));
+
+        Response response = given()
+                    .header("Accept-Language", "en")
+                    .contentType(ContentType.JSON)
+                    .body(payload)
+                .when()
+                    .post(POST_LEGAL_PERSONS)
+                .then()
+                    .extract().response();
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(response.jsonPath().getString("code")).isEqualTo("GEN00400");
+        assertThat(response.jsonPath().getList("extra_fields", Map.class)).containsExactlyInAnyOrder(
+                Map.of("field", "phone_number.number", "error", "INVALID_FORMAT"));
+    }
+
+    @Test
     void createLegalPerson_numberWithTenDigits_returnsBadRequest() {
         MockTools.clearMocker();
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "3022418012");
+                "number", "99999000012");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -950,7 +1036,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -993,7 +1079,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1036,7 +1122,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1079,7 +1165,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> payload = Map.of(
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
@@ -1116,7 +1202,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> firstCollaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1165,7 +1251,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "document_number", CpfGenerator.generateCpf(),
                 "name", "Bianca Torres",
@@ -1207,7 +1293,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "name", "Bianca Torres",
@@ -1249,7 +1335,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1291,7 +1377,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1333,7 +1419,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1374,7 +1460,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         MockTools.clearMocker();
         Map<String, Object> phoneNumber = Map.of(
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1416,7 +1502,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         MockTools.clearMocker();
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1501,7 +1587,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1544,7 +1630,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", "529.982.247-25",
@@ -1587,7 +1673,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1630,7 +1716,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", "5299822472A",
@@ -1673,7 +1759,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1717,7 +1803,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1761,7 +1847,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1804,7 +1890,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", CpfGenerator.generateCpf(),
@@ -1901,7 +1987,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         String cpf = CpfGenerator.generateCpf();
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
@@ -1948,7 +2034,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> secondPhoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> secondCollaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", cpf,
@@ -1990,7 +2076,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> phoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         String cpf = CpfGenerator.generateCpf();
         Map<String, Object> collaborator = Map.of(
                 "collaborator_role", "OWNER",
@@ -2037,7 +2123,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
         Map<String, Object> secondPhoneNumber = Map.of(
                 "country_code", "55",
                 "area_code", "51",
-                "number", "30224180");
+                "number", "999990000");
         Map<String, Object> secondCollaborator = Map.of(
                 "collaborator_role", "OWNER",
                 "document_number", cpf,
@@ -2080,7 +2166,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
                         "postal_code", "90110220",
@@ -2117,7 +2203,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "UNKNOWN",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2155,7 +2241,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "limited",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2193,7 +2279,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "legal_person_address", Map.of(
                         "postal_code", "90110220",
@@ -2230,7 +2316,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 0,
                 "legal_person_address", Map.of(
@@ -2268,7 +2354,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", -10.50,
                 "legal_person_address", Map.of(
@@ -2306,7 +2392,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 10.123,
                 "legal_person_address", Map.of(
@@ -2344,7 +2430,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", new BigDecimal("123456789012345678"),
                 "legal_person_address", Map.of(
@@ -2382,7 +2468,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", "abc",
                 "legal_person_address", Map.of(
@@ -2420,7 +2506,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_collaborators", List.of(Map.of(
@@ -2452,7 +2538,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2489,7 +2575,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2527,7 +2613,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2565,7 +2651,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2602,7 +2688,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2640,7 +2726,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2677,7 +2763,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2715,7 +2801,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2753,7 +2839,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2790,7 +2876,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2838,7 +2924,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", cnpj,
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -2909,7 +2995,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", cnpj,
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "MEI",
                 "monthly_revenue_amount", 1234.56,
                 "legal_person_address", Map.of(
@@ -2960,7 +3046,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -3008,7 +3094,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", email,
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -3044,7 +3130,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", email,
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -3090,7 +3176,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -3135,7 +3221,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", ownerEmail,
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(
@@ -3179,7 +3265,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", cnpj,
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "MEI",
                 "monthly_revenue_amount", new BigDecimal("12345678901234567.89"),
                 "legal_person_address", Map.of(
@@ -3223,7 +3309,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", cnpj,
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "INDIVIDUAL",
                 "monthly_revenue_amount", 0.01,
                 "legal_person_address", Map.of(
@@ -3283,7 +3369,7 @@ class TestPostCreateLegalPerson extends BaseIntegrationTest {
                 "document_number", cnpj,
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", UUID.randomUUID() + "@lenha.com.br",
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "ASSOCIATION",
                 "monthly_revenue_amount", 0.01,
                 "legal_person_address", Map.of(

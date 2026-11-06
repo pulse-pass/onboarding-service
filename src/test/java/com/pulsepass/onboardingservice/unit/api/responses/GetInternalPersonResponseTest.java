@@ -32,7 +32,7 @@ class GetInternalPersonResponseTest {
                 new LegalPersonCompanyType(1L, "LIMITED", null),
                 new BigDecimal("25000.00"));
         var phoneNumbers = List.of(
-                new PersonPhoneNumber("phone-1", company, "55", "51", "30224180"),
+                new PersonPhoneNumber("phone-1", company, "55", "51", "999990000"),
                 new PersonPhoneNumber("phone-2", company, "55", "11", "999999999")
         );
 
@@ -58,7 +58,7 @@ class GetInternalPersonResponseTest {
     void fromDTO_naturalPerson_mapsRootPhonesAndNaturalPersonWithNullLegalPerson() {
         var person = new Person(2L, "user-key", new PersonType(2L, "NATURAL", null),
                 "52998224725", "John Doe", CREATED_AT, CREATED_AT);
-        var phoneNumbers = List.of(new PersonPhoneNumber("phone-1", person, "55", "51", "30224180"));
+        var phoneNumbers = List.of(new PersonPhoneNumber("phone-1", person, "55", "51", "999990000"));
 
         var response = GetInternalPersonResponse.fromDTO(new GetInternalPersonDTO(
                 person, phoneNumbers, null, new NaturalPerson(person, "john@mail.com")));

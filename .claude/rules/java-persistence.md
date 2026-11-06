@@ -41,3 +41,4 @@ paths:
 
 - **ONB-201** The email lives in `legal_person` (unique, `legal_person_email_unique`, because the payment provider refuses a repeated one) and in `natural_person` (can repeat: the company and its owner can use the same one, and so can two owners).
 - **ONB-202** The service checks the company email after the documents and answers 409 `ONB00010`.
+- **ONB-274** A phone number is always a mobile: `^9\d{8}$` in `PersonPhoneNumberSchema`, because the payment provider refuses a landline.

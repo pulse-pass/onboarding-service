@@ -10,12 +10,12 @@ class PersonPhoneNumberResponseTest {
 
     @Test
     void fromEntity_phoneNumber_mapsAllFields() {
-        var phoneNumber = new PersonPhoneNumber("phone-key", null, "55", "51", "30224180");
+        var phoneNumber = new PersonPhoneNumber("phone-key", null, "55", "51", "999990000");
 
         var response = PersonPhoneNumberResponse.fromEntity(phoneNumber);
 
         assertThat(response.countryCode()).isEqualTo("55");
         assertThat(response.areaCode()).isEqualTo("51");
-        assertThat(response.number()).isEqualTo("30224180");
+        assertThat(response.number()).isEqualTo("999990000");
     }
 }

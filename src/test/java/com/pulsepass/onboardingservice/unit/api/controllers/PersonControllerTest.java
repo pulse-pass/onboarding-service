@@ -135,7 +135,7 @@ class PersonControllerTest {
                         "Praia de Belas"),
                 new LegalPersonCompanyType(1L, "LIMITED", null),
                 new BigDecimal("25000.00"));
-        var phoneNumbers = List.of(new PersonPhoneNumber("phone-key", company, "55", "51", "30224180"));
+        var phoneNumbers = List.of(new PersonPhoneNumber("phone-key", company, "55", "51", "999990000"));
         when(personService.getInternalPerson("legal-key"))
                 .thenReturn(new GetInternalPersonDTO(company, phoneNumbers, legalPerson, null));
 
@@ -150,7 +150,7 @@ class PersonControllerTest {
                 .andExpect(jsonPath("$.created_at").value("2026-10-09T14:12:00Z"))
                 .andExpect(jsonPath("$.phone_numbers[0].country_code").value("55"))
                 .andExpect(jsonPath("$.phone_numbers[0].area_code").value("51"))
-                .andExpect(jsonPath("$.phone_numbers[0].number").value("30224180"))
+                .andExpect(jsonPath("$.phone_numbers[0].number").value("999990000"))
                 .andExpect(jsonPath("$.legal_person.email").value("acme@mail.com"))
                 .andExpect(jsonPath("$.legal_person.legal_person_company_type").value("LIMITED"))
                 .andExpect(jsonPath("$.legal_person.monthly_revenue_amount").value(25000.00))

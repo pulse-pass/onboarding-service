@@ -41,7 +41,7 @@ public final class SetupTools {
                 "document_number", CnpjGenerator.generateCnpj(),
                 "name", "Lenha Produções Artísticas Ltda",
                 "email", email,
-                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "30224180"),
+                "phone_number", Map.of("country_code", "55", "area_code", "51", "number", "999990000"),
                 "legal_person_company_type", "LIMITED",
                 "monthly_revenue_amount", 25000.00,
                 "legal_person_address", Map.of(

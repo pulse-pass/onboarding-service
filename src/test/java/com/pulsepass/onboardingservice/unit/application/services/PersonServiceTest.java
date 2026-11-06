@@ -127,7 +127,7 @@ class PersonServiceTest {
     @Test
     void getInternalPerson_legalPerson_returnsLegalPersonAndPhones() {
         stubLegalPerson();
-        var phoneNumbers = List.of(new PersonPhoneNumber("phone-1", company, "55", "51", "30224180"));
+        var phoneNumbers = List.of(new PersonPhoneNumber("phone-1", company, "55", "51", "999990000"));
         when(personPhoneNumberRepository.findAllByPersonKey("legal-1")).thenReturn(phoneNumbers);
 
         GetInternalPersonDTO result = service.getInternalPerson("legal-1");
