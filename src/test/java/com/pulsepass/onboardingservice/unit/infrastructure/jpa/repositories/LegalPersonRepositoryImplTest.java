@@ -7,11 +7,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonAddress;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonCompanyType;
 import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.entities.PersonType;
 import com.pulsepass.onboardingservice.infrastructure.jpa.entities.LegalPersonEntity;
 import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.JpaLegalPersonRepository;
 import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.LegalPersonRepositoryImpl;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +37,10 @@ class LegalPersonRepositoryImplTest {
     @Test
     void save_domain_savesEntityAndReturnsMappedDomain() {
         var domain = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW), NOW, NOW);
+                "12345678000195", "Acme", "acme@mail.com", NOW, NOW),
+                new LegalPersonAddress(4L, "address-key", "90110220", "Rua Ismael Chaves Barcelos", "60",
+                        "Sala 2", "Praia de Belas", NOW, NOW),
+                new LegalPersonCompanyType(5L, "LIMITED", NOW), new BigDecimal("25000.00"), NOW, NOW);
         when(jpaRepository.save(any(LegalPersonEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
         var saved = repository.save(domain);
@@ -48,7 +54,10 @@ class LegalPersonRepositoryImplTest {
     @Test
     void findByPersonKey_existing_returnsMappedDomain() {
         var domain = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
-                "12345678000195", "Acme", "acme@mail.com", NOW, NOW), NOW, NOW);
+                "12345678000195", "Acme", "acme@mail.com", NOW, NOW),
+                new LegalPersonAddress(4L, "address-key", "90110220", "Rua Ismael Chaves Barcelos", "60",
+                        "Sala 2", "Praia de Belas", NOW, NOW),
+                new LegalPersonCompanyType(5L, "LIMITED", NOW), new BigDecimal("25000.00"), NOW, NOW);
         when(jpaRepository.findByPersonPersonKey("person-key"))
                 .thenReturn(Optional.of(LegalPersonEntity.fromDomain(domain)));
 

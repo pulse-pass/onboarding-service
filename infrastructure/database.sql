@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS onboarding.person (
     CONSTRAINT pk_person PRIMARY KEY (id),
     CONSTRAINT person_key_unique UNIQUE (person_key),
     CONSTRAINT person_document_number_unique UNIQUE (document_number),
+    CONSTRAINT person_email_unique UNIQUE (email),
     CONSTRAINT fk1_person FOREIGN KEY (person_type_id)
         REFERENCES onboarding.person_type (id)
 );
@@ -50,15 +51,48 @@ SELECT id
 FROM onboarding.person
 WHERE person_key = '00000000-0000-4000-8000-000000000001';
 
+CREATE TABLE IF NOT EXISTS onboarding.legal_person_company_type (
+    id            BIGINT        NOT NULL AUTO_INCREMENT,
+    enumerator    VARCHAR(50)   NOT NULL,
+    created_at    TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    CONSTRAINT pk_legal_person_company_type PRIMARY KEY (id),
+    CONSTRAINT legal_person_company_type_enumerator_unique UNIQUE (enumerator)
+);
+
+INSERT IGNORE INTO onboarding.legal_person_company_type (enumerator)
+VALUES ('MEI'), ('LIMITED'), ('INDIVIDUAL'), ('ASSOCIATION');
+
+CREATE TABLE IF NOT EXISTS onboarding.legal_person_address (
+    id                         BIGINT        NOT NULL AUTO_INCREMENT,
+    legal_person_address_key   VARCHAR(36)   NOT NULL,
+    postal_code                VARCHAR(8)    NOT NULL,
+    street                     VARCHAR(255)  NOT NULL,
+    number                     VARCHAR(20)   NOT NULL,
+    complement                 VARCHAR(255)  NULL,
+    neighborhood               VARCHAR(255)  NOT NULL,
+    created_at                 TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    updated_at                 TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    CONSTRAINT pk_legal_person_address PRIMARY KEY (id),
+    CONSTRAINT legal_person_address_key_unique UNIQUE (legal_person_address_key)
+);
+
 CREATE TABLE IF NOT EXISTS onboarding.legal_person (
-    id          BIGINT        NOT NULL AUTO_INCREMENT,
-    person_id   BIGINT        NOT NULL,
-    created_at  TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    updated_at  TIMESTAMP(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    id                              BIGINT         NOT NULL AUTO_INCREMENT,
+    person_id                       BIGINT         NOT NULL,
+    legal_person_address_id         BIGINT         NOT NULL,
+    legal_person_company_type_id    BIGINT         NOT NULL,
+    monthly_revenue_amount          DECIMAL(19,2)  NOT NULL,
+    created_at                      TIMESTAMP(3)   NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    updated_at                      TIMESTAMP(3)   NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     CONSTRAINT pk_legal_person PRIMARY KEY (id),
     CONSTRAINT legal_person_person_id_unique UNIQUE (person_id),
+    CONSTRAINT legal_person_legal_person_address_id_unique UNIQUE (legal_person_address_id),
     CONSTRAINT fk1_legal_person FOREIGN KEY (person_id)
-        REFERENCES onboarding.person (id)
+        REFERENCES onboarding.person (id),
+    CONSTRAINT fk2_legal_person FOREIGN KEY (legal_person_address_id)
+        REFERENCES onboarding.legal_person_address (id),
+    CONSTRAINT fk3_legal_person FOREIGN KEY (legal_person_company_type_id)
+        REFERENCES onboarding.legal_person_company_type (id)
 );
 
 CREATE TABLE IF NOT EXISTS onboarding.person_phone_number (

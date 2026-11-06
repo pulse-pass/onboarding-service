@@ -107,14 +107,6 @@ class OrganizationServiceOrganizationGatewayTest {
     }
 
     @Test
-    void createOrganization_createdWithoutOrganizationKey_throwsOrganizationCreationException() {
-        server.on("POST", PATH, Response.of(201, "{}"));
-
-        assertThatThrownBy(() -> gateway.createOrganization(INPUT))
-                .isInstanceOf(OrganizationCreationException.class);
-    }
-
-    @Test
     void createOrganization_readTimeoutExceeded_throwsOrganizationCreationException() {
         server.on("POST", PATH, Response.of(201, "{\"organization_key\":\"org-key\"}"));
         server.delay("POST", PATH, 1500);

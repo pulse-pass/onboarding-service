@@ -4,8 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.pulsepass.onboardingservice.api.responses.GetInternalLegalPersonResponse;
 import com.pulsepass.onboardingservice.application.dtos.output.GetInternalLegalPersonDTO;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonAddress;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonCompanyType;
 import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.entities.PersonPhoneNumber;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,7 +29,13 @@ class GetInternalLegalPersonResponseTest {
         );
 
         var response = GetInternalLegalPersonResponse.fromDTO(
-                new GetInternalLegalPersonDTO(company, owner, phoneNumbers));
+                new GetInternalLegalPersonDTO(
+                        company,
+                        owner,
+                        phoneNumbers,
+                        new LegalPersonCompanyType(1L, "LIMITED", null),
+                        new BigDecimal("25000.00"),
+                        new LegalPersonAddress("address-key", "90110220", "Rua A", "60", "Sala 2", "Centro")));
 
         assertThat(response.legalPersonKey()).isEqualTo("legal-key");
         assertThat(response.name()).isEqualTo("Acme");
@@ -38,6 +47,14 @@ class GetInternalLegalPersonResponseTest {
         assertThat(response.phoneNumbers().get(1).number()).isEqualTo("999999999");
         assertThat(response.owner().personKey()).isEqualTo("owner-key");
         assertThat(response.owner().name()).isEqualTo("John Doe");
+        assertThat(response.legalPersonCompanyType()).isEqualTo("LIMITED");
+        assertThat(response.monthlyRevenueAmount()).isEqualByComparingTo("25000.00");
+        assertThat(response.legalPersonAddress().legalPersonAddressKey()).isEqualTo("address-key");
+        assertThat(response.legalPersonAddress().postalCode()).isEqualTo("90110220");
+        assertThat(response.legalPersonAddress().street()).isEqualTo("Rua A");
+        assertThat(response.legalPersonAddress().number()).isEqualTo("60");
+        assertThat(response.legalPersonAddress().complement()).isEqualTo("Sala 2");
+        assertThat(response.legalPersonAddress().neighborhood()).isEqualTo("Centro");
     }
 
     @Test
@@ -47,7 +64,13 @@ class GetInternalLegalPersonResponseTest {
         var owner = new Person("owner-key", null, "52998224725", "John Doe", "john@mail.com");
 
         var response = GetInternalLegalPersonResponse.fromDTO(
-                new GetInternalLegalPersonDTO(company, owner, List.of()));
+                new GetInternalLegalPersonDTO(
+                        company,
+                        owner,
+                        List.of(),
+                        new LegalPersonCompanyType(1L, "MEI", null),
+                        new BigDecimal("100.00"),
+                        new LegalPersonAddress("address-key", "90110220", "Rua A", "60", null, "Centro")));
 
         assertThat(response.phoneNumbers()).isEmpty();
     }

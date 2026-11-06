@@ -15,7 +15,7 @@ class CreateLegalPersonResponseTest {
         var person = new Person("person-key", new PersonType(1L, "LEGAL", null),
                 "12345678000195", "Acme", "acme@mail.com");
 
-        var response = CreateLegalPersonResponse.fromEntity(new LegalPerson(person));
+        var response = CreateLegalPersonResponse.fromEntity(new LegalPerson(person, null, null, null));
 
         assertThat(response.personKey()).isEqualTo("person-key");
         assertThat(response.documentNumber()).isEqualTo("12345678000195");

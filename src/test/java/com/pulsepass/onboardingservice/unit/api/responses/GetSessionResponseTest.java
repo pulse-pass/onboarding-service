@@ -18,7 +18,7 @@ class GetSessionResponseTest {
         var company = new Person("legal-person-key", null, "12345678000195", "Acme", "acme@mail.com");
 
         var response = GetSessionResponse.fromDTO(
-                new GetSessionDTO(OWNER, List.of("organizer"), new LegalPerson(company)));
+                new GetSessionDTO(OWNER, List.of("organizer"), new LegalPerson(company, null, null, null)));
 
         assertThat(response.personKey()).isEqualTo("person-key");
         assertThat(response.name()).isEqualTo("Bianca Torres");

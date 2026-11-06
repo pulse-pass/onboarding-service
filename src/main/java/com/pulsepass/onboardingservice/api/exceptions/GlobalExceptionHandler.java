@@ -12,6 +12,7 @@ import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundExce
 import com.pulsepass.onboardingservice.domain.exceptions.MissingSelectedAgentKeyException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
+import com.pulsepass.onboardingservice.domain.exceptions.PersonEmailAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.UnauthorizedInternalRequestException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
@@ -42,6 +43,7 @@ public class GlobalExceptionHandler {
 
     private static final Map<Class<? extends DomainException>, HttpStatus> STATUS_MAP = Map.ofEntries(
             Map.entry(LegalPersonAlreadyExistsException.class, HttpStatus.CONFLICT),
+            Map.entry(PersonEmailAlreadyExistsException.class, HttpStatus.CONFLICT),
             Map.entry(NaturalPersonAlreadyExistsException.class, HttpStatus.CONFLICT),
             Map.entry(InvalidLegalPersonDocumentException.class, HttpStatus.BAD_REQUEST),
             Map.entry(InvalidNaturalPersonDocumentException.class, HttpStatus.BAD_REQUEST),

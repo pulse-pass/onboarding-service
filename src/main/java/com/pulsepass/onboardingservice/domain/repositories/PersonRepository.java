@@ -10,4 +10,6 @@ public interface PersonRepository {
     Optional<Person> findByDocumentNumber(String documentNumber);
 
     Optional<Person> findByPersonKey(String personKey);
+
+    Optional<Person> findByEmail(String email);
 }

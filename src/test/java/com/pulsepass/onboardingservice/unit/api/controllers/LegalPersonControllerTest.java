@@ -16,12 +16,16 @@ import com.pulsepass.onboardingservice.api.controllers.LegalPersonController;
 import com.pulsepass.onboardingservice.api.exceptions.GlobalExceptionHandler;
 import com.pulsepass.onboardingservice.api.validators.InternalRequestValidator;
 import com.pulsepass.onboardingservice.application.dtos.input.CreateLegalPersonDTO;
+import com.pulsepass.onboardingservice.application.dtos.input.definitions.LegalPersonAddressDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.LegalPersonCollaboratorDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.PersonPhoneNumberDTO;
 import com.pulsepass.onboardingservice.application.dtos.output.GetInternalLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.dtos.output.GetLegalPersonDTO;
 import com.pulsepass.onboardingservice.application.services.LegalPersonService;
 import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonAddress;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonCompanyType;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonCompanyTypeEnum;
 import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.entities.PersonPhoneNumber;
 import com.pulsepass.onboardingservice.domain.entities.PersonType;
@@ -30,6 +34,7 @@ import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundExce
 import com.pulsepass.onboardingservice.domain.exceptions.MissingSelectedAgentKeyException;
 import com.pulsepass.onboardingservice.domain.exceptions.UnauthorizedInternalRequestException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Stream;
@@ -74,6 +79,15 @@ class LegalPersonControllerTest {
                   "name": "Acme Events",
                   "email": "acme@mail.com",
                   "phone_number": {"country_code": "55", "area_code": "11", "number": "999999999"},
+                  "legal_person_company_type": "LIMITED",
+                  "monthly_revenue_amount": 25000.00,
+                  "legal_person_address": {
+                    "postal_code": "90110220",
+                    "street": "Rua Ismael Chaves Barcelos",
+                    "number": "60",
+                    "complement": "Sala 2",
+                    "neighborhood": "Praia de Belas"
+                  },
                   "legal_person_collaborators": [
                     {
                       "collaborator_role": %s,
@@ -94,7 +108,7 @@ class LegalPersonControllerTest {
     private static LegalPerson legalPerson() {
         var person = new Person("person-key", new PersonType(1L, "LEGAL", null),
                 "12345678000195", "Acme Events", "acme@mail.com");
-        return new LegalPerson(person);
+        return new LegalPerson(person, null, null, null);
     }
 
     @Test
@@ -116,6 +130,9 @@ class LegalPersonControllerTest {
                 "Acme Events",
                 "acme@mail.com",
                 new PersonPhoneNumberDTO("55", "11", "999999999"),
+                LegalPersonCompanyTypeEnum.LIMITED,
+                new BigDecimal("25000.00"),
+                new LegalPersonAddressDTO("90110220", "Rua Ismael Chaves Barcelos", "60", "Sala 2", "Praia de Belas"),
                 List.of(new LegalPersonCollaboratorDTO(
                         "OWNER", "52998224725", "John Doe", "john@mail.com", "Secret123"))
         ));
@@ -134,9 +151,31 @@ class LegalPersonControllerTest {
                 Arguments.of("collaborators empty", """
                         {"document_number": "12345678000195", "name": "Acme", "email": "a@mail.com",
                          "phone_number": {"country_code": "55", "area_code": "11", "number": "999999999"},
+                         "legal_person_company_type": "LIMITED", "monthly_revenue_amount": 25000.00,
+                         "legal_person_address": {"postal_code": "90110220", "street": "Rua A", "number": "60",
+                          "neighborhood": "Centro"},
                          "legal_person_collaborators": []}
                         """),
                 Arguments.of("phone number missing", VALID_BODY.replaceFirst("\"phone_number\":[^\\n]*\\n", "")),
+                Arguments.of("company type missing",
+                        VALID_BODY.replace("\"legal_person_company_type\": \"LIMITED\",", "")),
+                Arguments.of("company type unknown", VALID_BODY.replace("\"LIMITED\"", "\"UNKNOWN\"")),
+                Arguments.of("revenue missing", VALID_BODY.replace("\"monthly_revenue_amount\": 25000.00,", "")),
+                Arguments.of("revenue zero", VALID_BODY.replace("25000.00", "0")),
+                Arguments.of("revenue negative", VALID_BODY.replace("25000.00", "-1")),
+                Arguments.of("revenue three decimals", VALID_BODY.replace("25000.00", "10.123")),
+                Arguments.of("revenue too many integer digits",
+                        VALID_BODY.replace("25000.00", "123456789012345678")),
+                Arguments.of("address missing",
+                        VALID_BODY.replaceFirst("(?s)\"legal_person_address\": \\{.*?\\},", "")),
+                Arguments.of("postal code 7 digits", VALID_BODY.replace("90110220", "9011022")),
+                Arguments.of("postal code with hyphen", VALID_BODY.replace("90110220", "90110-220")),
+                Arguments.of("street blank", VALID_BODY.replace("Rua Ismael Chaves Barcelos", " ")),
+                Arguments.of("street too long", VALID_BODY.replace("Rua Ismael Chaves Barcelos", "a".repeat(256))),
+                Arguments.of("number blank", VALID_BODY.replace("\"number\": \"60\"", "\"number\": \"\"")),
+                Arguments.of("number too long", VALID_BODY.replace("\"60\"", "\"" + "1".repeat(21) + "\"")),
+                Arguments.of("complement too long", VALID_BODY.replace("Sala 2", "a".repeat(256))),
+                Arguments.of("neighborhood blank", VALID_BODY.replace("Praia de Belas", " ")),
                 Arguments.of("malformed json", "{\"document_number\": "),
                 Arguments.of("empty body", "")
         );
@@ -237,7 +276,14 @@ class LegalPersonControllerTest {
                 "52998224725", "John Doe", "john@mail.com");
         var phoneNumbers = List.of(new PersonPhoneNumber("phone-key", company, "55", "51", "30224180"));
         when(legalPersonService.getInternalLegalPerson("legal-key")).thenReturn(
-                new GetInternalLegalPersonDTO(company, owner, phoneNumbers));
+                new GetInternalLegalPersonDTO(
+                        company,
+                        owner,
+                        phoneNumbers,
+                        new LegalPersonCompanyType(1L, "LIMITED", null),
+                        new BigDecimal("25000.00"),
+                        new LegalPersonAddress("address-key", "90110220", "Rua Ismael Chaves Barcelos", "60", null,
+                                "Praia de Belas")));
 
         mockMvc.perform(get(INTERNAL_URL + "/legal-key")
                         .header("internal-token", "token")
@@ -250,6 +296,14 @@ class LegalPersonControllerTest {
                 .andExpect(jsonPath("$.phone_numbers[0].country_code").value("55"))
                 .andExpect(jsonPath("$.phone_numbers[0].area_code").value("51"))
                 .andExpect(jsonPath("$.phone_numbers[0].number").value("30224180"))
+                .andExpect(jsonPath("$.legal_person_company_type").value("LIMITED"))
+                .andExpect(jsonPath("$.monthly_revenue_amount").value(25000.00))
+                .andExpect(jsonPath("$.legal_person_address.legal_person_address_key").value("address-key"))
+                .andExpect(jsonPath("$.legal_person_address.postal_code").value("90110220"))
+                .andExpect(jsonPath("$.legal_person_address.street").value("Rua Ismael Chaves Barcelos"))
+                .andExpect(jsonPath("$.legal_person_address.number").value("60"))
+                .andExpect(jsonPath("$.legal_person_address.complement").doesNotExist())
+                .andExpect(jsonPath("$.legal_person_address.neighborhood").value("Praia de Belas"))
                 .andExpect(jsonPath("$.created_at").value("2026-10-09T14:12:00Z"))
                 .andExpect(jsonPath("$.owner.person_key").value("owner-key"))
                 .andExpect(jsonPath("$.owner.name").value("John Doe"))

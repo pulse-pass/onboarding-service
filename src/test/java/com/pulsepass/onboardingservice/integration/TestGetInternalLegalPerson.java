@@ -31,18 +31,28 @@ class TestGetInternalLegalPerson extends BaseIntegrationTest {
         assertThat(response.jsonPath().getString("legal_person_key")).isEqualTo(legalPersonKey);
         assertThat(response.jsonPath().getString("name")).isEqualTo("Lenha Produções Artísticas Ltda");
         assertThat(response.jsonPath().getString("document_number")).hasSize(14);
-        assertThat(response.jsonPath().getString("email")).isEqualTo("contato@lenha.com.br");
+        assertThat(response.jsonPath().getString("email")).endsWith("@lenha.com.br");
         assertThat(response.jsonPath().getString("created_at")).endsWith("Z");
         assertThat(response.jsonPath().getList("phone_numbers")).hasSize(1);
         assertThat(response.jsonPath().getString("phone_numbers[0].country_code")).isEqualTo("55");
         assertThat(response.jsonPath().getString("phone_numbers[0].area_code")).isEqualTo("51");
         assertThat(response.jsonPath().getString("phone_numbers[0].number")).isEqualTo("30224180");
+        assertThat(response.jsonPath().getString("legal_person_company_type")).isEqualTo("LIMITED");
+        assertThat(response.jsonPath().getDouble("monthly_revenue_amount")).isEqualTo(25000.00);
+        assertThat(UUID.fromString(response.jsonPath().getString("legal_person_address.legal_person_address_key")))
+                .isNotNull();
+        assertThat(response.jsonPath().getString("legal_person_address.postal_code")).isEqualTo("90110220");
+        assertThat(response.jsonPath().getString("legal_person_address.street"))
+                .isEqualTo("Rua Ismael Chaves Barcelos");
+        assertThat(response.jsonPath().getString("legal_person_address.number")).isEqualTo("60");
+        assertThat(response.jsonPath().getString("legal_person_address.complement")).isEqualTo("Sala 2");
+        assertThat(response.jsonPath().getString("legal_person_address.neighborhood")).isEqualTo("Praia de Belas");
         String ownerPersonKey = response.jsonPath().getString("owner.person_key");
         assertThat(UUID.fromString(ownerPersonKey)).isNotNull();
         assertThat(ownerPersonKey).isNotEqualTo(legalPersonKey);
         assertThat(response.jsonPath().getString("owner.name")).isEqualTo("Bianca Torres");
         assertThat(response.jsonPath().getString("owner.document_number")).isEqualTo(ownerCpf);
-        assertThat(response.jsonPath().getString("owner.email")).isEqualTo("bianca@lenha.com.br");
+        assertThat(response.jsonPath().getString("owner.email")).endsWith("@lenha.com.br");
     }
 
     @Test

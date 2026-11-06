@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.pulsepass.onboardingservice.application.dtos.input.CreateLegalPersonDTO;
+import com.pulsepass.onboardingservice.application.dtos.input.definitions.LegalPersonAddressDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.LegalPersonCollaboratorDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.definitions.PersonPhoneNumberDTO;
 import com.pulsepass.onboardingservice.application.dtos.output.GetInternalLegalPersonDTO;
@@ -21,9 +22,12 @@ import com.pulsepass.onboardingservice.domain.UnitOfWork;
 import com.pulsepass.onboardingservice.domain.entities.CollaboratorRole;
 import com.pulsepass.onboardingservice.domain.entities.CollaboratorRoleEnum;
 import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonAddress;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaborator;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorHistory;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorStatus;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonCompanyType;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonCompanyTypeEnum;
 import com.pulsepass.onboardingservice.domain.entities.NaturalPerson;
 import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.entities.PersonPhoneNumber;
@@ -35,6 +39,7 @@ import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonAlreadyExist
 import com.pulsepass.onboardingservice.domain.exceptions.LegalPersonNotFoundException;
 import com.pulsepass.onboardingservice.domain.exceptions.NaturalPersonAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
+import com.pulsepass.onboardingservice.domain.exceptions.PersonEmailAlreadyExistsException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.IdentityProviderGateway;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateUserInputDTO;
@@ -42,14 +47,17 @@ import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.Use
 import com.pulsepass.onboardingservice.domain.gateways.organization.OrganizationGateway;
 import com.pulsepass.onboardingservice.domain.gateways.organization.dtos.CreateOrganizationInputDTO;
 import com.pulsepass.onboardingservice.domain.repositories.CollaboratorRoleRepository;
+import com.pulsepass.onboardingservice.domain.repositories.LegalPersonAddressRepository;
 import com.pulsepass.onboardingservice.domain.repositories.LegalPersonCollaboratorHistoryRepository;
 import com.pulsepass.onboardingservice.domain.repositories.LegalPersonCollaboratorRepository;
 import com.pulsepass.onboardingservice.domain.repositories.LegalPersonCollaboratorStatusRepository;
+import com.pulsepass.onboardingservice.domain.repositories.LegalPersonCompanyTypeRepository;
 import com.pulsepass.onboardingservice.domain.repositories.LegalPersonRepository;
 import com.pulsepass.onboardingservice.domain.repositories.NaturalPersonRepository;
 import com.pulsepass.onboardingservice.domain.repositories.PersonPhoneNumberRepository;
 import com.pulsepass.onboardingservice.domain.repositories.PersonRepository;
 import com.pulsepass.onboardingservice.domain.repositories.PersonTypeRepository;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -78,6 +86,10 @@ class LegalPersonServiceTest {
     @Mock
     private LegalPersonRepository legalPersonRepository;
     @Mock
+    private LegalPersonAddressRepository legalPersonAddressRepository;
+    @Mock
+    private LegalPersonCompanyTypeRepository legalPersonCompanyTypeRepository;
+    @Mock
     private PersonPhoneNumberRepository personPhoneNumberRepository;
     @Mock
     private CollaboratorRoleRepository collaboratorRoleRepository;
@@ -96,6 +108,7 @@ class LegalPersonServiceTest {
 
     private final PersonType legalType = new PersonType(1L, "LEGAL", null);
     private final PersonType naturalType = new PersonType(2L, "NATURAL", null);
+    private final LegalPersonCompanyType limitedCompanyType = new LegalPersonCompanyType(1L, "LIMITED", null);
     private final CollaboratorRole ownerRole = new CollaboratorRole(1L, "OWNER", null);
     private final LegalPersonCollaboratorStatus activeStatus = new LegalPersonCollaboratorStatus(1L, "ACTIVE", null);
 
@@ -107,6 +120,8 @@ class LegalPersonServiceTest {
                 personTypeRepository,
                 naturalPersonRepository,
                 legalPersonRepository,
+                legalPersonAddressRepository,
+                legalPersonCompanyTypeRepository,
                 personPhoneNumberRepository,
                 collaboratorRoleRepository,
                 legalPersonCollaboratorStatusRepository,
@@ -123,6 +138,9 @@ class LegalPersonServiceTest {
                 "Acme Events",
                 "acme@mail.com",
                 new PersonPhoneNumberDTO("55", "11", "999999999"),
+                LegalPersonCompanyTypeEnum.LIMITED,
+                new BigDecimal("25000.00"),
+                new LegalPersonAddressDTO("90110220", "Rua Ismael Chaves Barcelos", "60", "Sala 2", "Praia de Belas"),
                 List.of(new LegalPersonCollaboratorDTO(role, cpf, "John Doe", "john@mail.com", "Secret123"))
         );
     }
@@ -130,11 +148,18 @@ class LegalPersonServiceTest {
     private void stubNoDuplicates() {
         when(personRepository.findByDocumentNumber(CNPJ)).thenReturn(Optional.empty());
         when(personRepository.findByDocumentNumber(CPF)).thenReturn(Optional.empty());
+        when(personRepository.findByEmail("acme@mail.com")).thenReturn(Optional.empty());
+        when(personRepository.findByEmail("john@mail.com")).thenReturn(Optional.empty());
     }
 
     private void stubPersonTypes() {
         when(personTypeRepository.findByEnumerator("LEGAL")).thenReturn(Optional.of(legalType));
         when(personTypeRepository.findByEnumerator("NATURAL")).thenReturn(Optional.of(naturalType));
+    }
+
+    private void stubCompanyType() {
+        when(legalPersonCompanyTypeRepository.findByEnumerator("LIMITED"))
+                .thenReturn(Optional.of(limitedCompanyType));
     }
 
     private void stubOwnerRole() {
@@ -149,12 +174,14 @@ class LegalPersonServiceTest {
     private void stubLookups() {
         stubNoDuplicates();
         stubPersonTypes();
+        stubCompanyType();
         stubOwnerRole();
         stubActiveStatus();
     }
 
     private void stubSaves() {
         when(personRepository.save(any(Person.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(legalPersonAddressRepository.save(any(LegalPersonAddress.class))).thenAnswer(inv -> inv.getArgument(0));
         when(legalPersonRepository.save(any(LegalPerson.class))).thenAnswer(inv -> inv.getArgument(0));
         when(naturalPersonRepository.save(any(NaturalPerson.class))).thenAnswer(inv -> inv.getArgument(0));
         when(legalPersonCollaboratorRepository.save(any(LegalPersonCollaborator.class)))
@@ -187,6 +214,18 @@ class LegalPersonServiceTest {
         ArgumentCaptor<LegalPerson> legalCaptor = ArgumentCaptor.forClass(LegalPerson.class);
         verify(legalPersonRepository).save(legalCaptor.capture());
         assertThat(legalCaptor.getValue().getPerson()).isSameAs(legalPersonSaved);
+        assertThat(legalCaptor.getValue().getLegalPersonCompanyType()).isSameAs(limitedCompanyType);
+        assertThat(legalCaptor.getValue().getMonthlyRevenueAmount()).isEqualByComparingTo("25000.00");
+
+        ArgumentCaptor<LegalPersonAddress> addressCaptor = ArgumentCaptor.forClass(LegalPersonAddress.class);
+        verify(legalPersonAddressRepository).save(addressCaptor.capture());
+        assertThat(legalCaptor.getValue().getLegalPersonAddress()).isSameAs(addressCaptor.getValue());
+        assertThat(UUID.fromString(addressCaptor.getValue().getLegalPersonAddressKey())).isNotNull();
+        assertThat(addressCaptor.getValue().getPostalCode()).isEqualTo("90110220");
+        assertThat(addressCaptor.getValue().getStreet()).isEqualTo("Rua Ismael Chaves Barcelos");
+        assertThat(addressCaptor.getValue().getNumber()).isEqualTo("60");
+        assertThat(addressCaptor.getValue().getComplement()).isEqualTo("Sala 2");
+        assertThat(addressCaptor.getValue().getNeighborhood()).isEqualTo("Praia de Belas");
 
         ArgumentCaptor<PersonPhoneNumber> phoneCaptor = ArgumentCaptor.forClass(PersonPhoneNumber.class);
         verify(personPhoneNumberRepository).save(phoneCaptor.capture());
@@ -225,10 +264,13 @@ class LegalPersonServiceTest {
 
         service.createLegalPerson(dto(CNPJ, "OWNER", CPF));
 
-        var order = inOrder(unitOfWork, personRepository, legalPersonCollaboratorHistoryRepository,
-                identityProviderGateway, organizationGateway);
+        var order = inOrder(unitOfWork, personRepository, legalPersonAddressRepository, legalPersonRepository,
+                legalPersonCollaboratorHistoryRepository, identityProviderGateway, organizationGateway);
         order.verify(unitOfWork).begin();
-        order.verify(personRepository, times(2)).save(any(Person.class));
+        order.verify(personRepository).save(any(Person.class));
+        order.verify(legalPersonAddressRepository).save(any(LegalPersonAddress.class));
+        order.verify(legalPersonRepository).save(any(LegalPerson.class));
+        order.verify(personRepository).save(any(Person.class));
         order.verify(legalPersonCollaboratorHistoryRepository).save(any(LegalPersonCollaboratorHistory.class));
         order.verify(unitOfWork).commit();
         order.verify(identityProviderGateway).createUser(any(CreateUserInputDTO.class));
@@ -287,6 +329,33 @@ class LegalPersonServiceTest {
     }
 
     @Test
+    void createLegalPerson_existingCompanyEmail_throwsEmailAlreadyExistsAndWritesNothing() {
+        when(personRepository.findByDocumentNumber(CNPJ)).thenReturn(Optional.empty());
+        when(personRepository.findByDocumentNumber(CPF)).thenReturn(Optional.empty());
+        when(personRepository.findByEmail("acme@mail.com"))
+                .thenReturn(Optional.of(new Person("key", legalType, "other", "Acme", "acme@mail.com")));
+
+        assertThatThrownBy(() -> service.createLegalPerson(dto(CNPJ, "OWNER", CPF)))
+                .isInstanceOf(PersonEmailAlreadyExistsException.class);
+
+        verify(personRepository, never()).save(any());
+        verifyNoInteractions(unitOfWork, identityProviderGateway, organizationGateway);
+    }
+
+    @Test
+    void createLegalPerson_existingOwnerEmail_throwsEmailAlreadyExistsAndWritesNothing() {
+        stubNoDuplicates();
+        when(personRepository.findByEmail("john@mail.com"))
+                .thenReturn(Optional.of(new Person("key", naturalType, "other", "John", "john@mail.com")));
+
+        assertThatThrownBy(() -> service.createLegalPerson(dto(CNPJ, "OWNER", CPF)))
+                .isInstanceOf(PersonEmailAlreadyExistsException.class);
+
+        verify(personRepository, never()).save(any());
+        verifyNoInteractions(unitOfWork, identityProviderGateway, organizationGateway);
+    }
+
+    @Test
     void createLegalPerson_existingCnpj_throwsAlreadyExistsAndWritesNothing() {
         when(personRepository.findByDocumentNumber(CNPJ))
                 .thenReturn(Optional.of(new Person("key", legalType, CNPJ, "Acme", "a@mail.com")));
@@ -320,8 +389,8 @@ class LegalPersonServiceTest {
                 .isInstanceOf(LegalPersonAlreadyExistsException.class);
 
         verify(unitOfWork, never()).commit();
-        verifyNoInteractions(legalPersonRepository, naturalPersonRepository, identityProviderGateway,
-                organizationGateway);
+        verifyNoInteractions(legalPersonAddressRepository, legalPersonRepository, naturalPersonRepository,
+                identityProviderGateway, organizationGateway);
     }
 
     @Test
@@ -330,6 +399,7 @@ class LegalPersonServiceTest {
         when(personRepository.save(any(Person.class)))
                 .thenAnswer(inv -> inv.getArgument(0))
                 .thenThrow(new DataIntegrityViolationException("dup"));
+        when(legalPersonAddressRepository.save(any(LegalPersonAddress.class))).thenAnswer(inv -> inv.getArgument(0));
         when(legalPersonRepository.save(any(LegalPerson.class))).thenAnswer(inv -> inv.getArgument(0));
 
         assertThatThrownBy(() -> service.createLegalPerson(dto(CNPJ, "OWNER", CPF)))
@@ -366,9 +436,23 @@ class LegalPersonServiceTest {
     }
 
     @Test
+    void createLegalPerson_companyTypeMissing_throwsIllegalStateBeforeBegin() {
+        stubNoDuplicates();
+        stubPersonTypes();
+        when(legalPersonCompanyTypeRepository.findByEnumerator("LIMITED")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.createLegalPerson(dto(CNPJ, "OWNER", CPF)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Legal person company type not found");
+
+        verifyNoInteractions(unitOfWork, legalPersonAddressRepository, identityProviderGateway, organizationGateway);
+    }
+
+    @Test
     void createLegalPerson_ownerRoleMissing_throwsIllegalState() {
         stubNoDuplicates();
         stubPersonTypes();
+        stubCompanyType();
         when(collaboratorRoleRepository.findByEnumerator("OWNER")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.createLegalPerson(dto(CNPJ, "OWNER", CPF)))
@@ -382,6 +466,7 @@ class LegalPersonServiceTest {
     void createLegalPerson_activeStatusMissing_throwsIllegalState() {
         stubNoDuplicates();
         stubPersonTypes();
+        stubCompanyType();
         stubOwnerRole();
         when(legalPersonCollaboratorStatusRepository.findByEnumerator("ACTIVE")).thenReturn(Optional.empty());
 
@@ -399,10 +484,34 @@ class LegalPersonServiceTest {
         var failure = new UserCreationException();
         doThrow(failure).when(identityProviderGateway).createUser(any(CreateUserInputDTO.class));
 
-        assertThatThrownBy(() -> service.createLegalPerson(dto(CNPJ, "OWNER", CPF))).isSameAs(failure);
+        assertThatThrownBy(() -> service.createLegalPerson(dto(CNPJ, "OWNER", CPF)))
+                .isInstanceOf(UserCreationException.class);
 
         verify(unitOfWork).commit();
         verifyNoInteractions(organizationGateway);
+    }
+
+    @Test
+    void createLegalPerson_unexpectedUserFailure_throwsUserCreationExceptionAndSkipsOrganization() {
+        stubLookups();
+        stubSaves();
+        doThrow(new IllegalStateException("boom")).when(identityProviderGateway).createUser(any(CreateUserInputDTO.class));
+
+        assertThatThrownBy(() -> service.createLegalPerson(dto(CNPJ, "OWNER", CPF)))
+                .isInstanceOf(UserCreationException.class);
+
+        verifyNoInteractions(organizationGateway);
+    }
+
+    @Test
+    void createLegalPerson_unexpectedOrganizationFailure_throwsOrganizationCreationException() {
+        stubLookups();
+        stubSaves();
+        when(organizationGateway.createOrganization(any(CreateOrganizationInputDTO.class)))
+                .thenThrow(new IllegalStateException("boom"));
+
+        assertThatThrownBy(() -> service.createLegalPerson(dto(CNPJ, "OWNER", CPF)))
+                .isInstanceOf(OrganizationCreationException.class);
     }
 
     @Test
@@ -412,7 +521,8 @@ class LegalPersonServiceTest {
         var failure = new OrganizationCreationException();
         when(organizationGateway.createOrganization(any(CreateOrganizationInputDTO.class))).thenThrow(failure);
 
-        assertThatThrownBy(() -> service.createLegalPerson(dto(CNPJ, "OWNER", CPF))).isSameAs(failure);
+        assertThatThrownBy(() -> service.createLegalPerson(dto(CNPJ, "OWNER", CPF)))
+                .isInstanceOf(OrganizationCreationException.class);
 
         verify(unitOfWork).commit();
         verify(identityProviderGateway).createUser(any(CreateUserInputDTO.class));
@@ -423,9 +533,10 @@ class LegalPersonServiceTest {
         var company = new Person("legal-1", legalType, "12345678000195", "One", "one@mail.com");
         var owner = new Person("owner-1", naturalType, "52998224725", "Owner One", "o1@mail.com");
         var ownerCollaborator = new LegalPersonCollaborator(
-                "c-1", new LegalPerson(company), new NaturalPerson(owner), ownerRole, activeStatus
+                "c-1", new LegalPerson(company, null, null, null), new NaturalPerson(owner), ownerRole, activeStatus
         );
-        when(legalPersonRepository.findByPersonKey("legal-1")).thenReturn(Optional.of(new LegalPerson(company)));
+        when(legalPersonRepository.findByPersonKey("legal-1"))
+                .thenReturn(Optional.of(new LegalPerson(company, null, null, null)));
         when(legalPersonCollaboratorRepository.findByLegalPersonKeyAndRole("legal-1", CollaboratorRoleEnum.OWNER))
                 .thenReturn(Optional.of(ownerCollaborator));
 
@@ -437,7 +548,8 @@ class LegalPersonServiceTest {
     @Test
     void getLegalPerson_ownerMissing_throwsIllegalState() {
         var company = new Person("legal-1", legalType, "12345678000195", "One", "one@mail.com");
-        when(legalPersonRepository.findByPersonKey("legal-1")).thenReturn(Optional.of(new LegalPerson(company)));
+        when(legalPersonRepository.findByPersonKey("legal-1"))
+                .thenReturn(Optional.of(new LegalPerson(company, null, null, null)));
         when(legalPersonCollaboratorRepository.findByLegalPersonKeyAndRole("legal-1", CollaboratorRoleEnum.OWNER))
                 .thenReturn(Optional.empty());
 
@@ -469,17 +581,20 @@ class LegalPersonServiceTest {
         var company = new Person("legal-1", legalType, "12345678000195", "One", "one@mail.com");
         var owner = new Person("owner-1", naturalType, "52998224725", "Owner One", "o1@mail.com");
         var ownerCollaborator = new LegalPersonCollaborator(
-                "c-1", new LegalPerson(company), new NaturalPerson(owner), ownerRole, activeStatus
+                "c-1", new LegalPerson(company, null, null, null), new NaturalPerson(owner), ownerRole, activeStatus
         );
         var phoneNumbers = List.of(new PersonPhoneNumber("phone-1", company, "55", "51", "30224180"));
-        when(legalPersonRepository.findByPersonKey("legal-1")).thenReturn(Optional.of(new LegalPerson(company)));
+        var address = new LegalPersonAddress("address-1", "90110220", "Rua A", "60", null, "Centro");
+        when(legalPersonRepository.findByPersonKey("legal-1")).thenReturn(Optional.of(
+                new LegalPerson(company, address, limitedCompanyType, new BigDecimal("25000.00"))));
         when(legalPersonCollaboratorRepository.findByLegalPersonKeyAndRole("legal-1", CollaboratorRoleEnum.OWNER))
                 .thenReturn(Optional.of(ownerCollaborator));
         when(personPhoneNumberRepository.findAllByPersonKey("legal-1")).thenReturn(phoneNumbers);
 
         GetInternalLegalPersonDTO result = service.getInternalLegalPerson("legal-1");
 
-        assertThat(result).isEqualTo(new GetInternalLegalPersonDTO(company, owner, phoneNumbers));
+        assertThat(result).isEqualTo(new GetInternalLegalPersonDTO(
+                company, owner, phoneNumbers, limitedCompanyType, new BigDecimal("25000.00"), address));
     }
 
     @Test
@@ -496,7 +611,8 @@ class LegalPersonServiceTest {
     @Test
     void getInternalLegalPerson_ownerMissing_throwsIllegalState() {
         var company = new Person("legal-1", legalType, "12345678000195", "One", "one@mail.com");
-        when(legalPersonRepository.findByPersonKey("legal-1")).thenReturn(Optional.of(new LegalPerson(company)));
+        when(legalPersonRepository.findByPersonKey("legal-1"))
+                .thenReturn(Optional.of(new LegalPerson(company, null, null, null)));
         when(legalPersonCollaboratorRepository.findByLegalPersonKeyAndRole("legal-1", CollaboratorRoleEnum.OWNER))
                 .thenReturn(Optional.empty());
 

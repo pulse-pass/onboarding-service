@@ -6,7 +6,9 @@ import com.pulsepass.onboardingservice.application.dtos.input.RefreshSessionDTO;
 import com.pulsepass.onboardingservice.application.dtos.output.GetSessionDTO;
 import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsException;
+import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidSessionException;
+import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.IdentityProviderGateway;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeleteSessionInputDTO;
@@ -51,25 +53,49 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
 
-        SessionOutputDTO session = identityProviderGateway.createSession(
-                new CreateSessionInputDTO(dto.documentNumber(), dto.password())
-        );
+        SessionOutputDTO session;
+        try {
+            session = identityProviderGateway.createSession(
+                    new CreateSessionInputDTO(dto.documentNumber(), dto.password())
+            );
+        } catch (InvalidCredentialsException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            logger.error("AuthService.createSession - Failed to create the session", ex);
+            throw new SessionException();
+        }
+
         logger.info("AuthService.createSession - Successfully finished");
         return session;
     }
 
     public SessionOutputDTO refreshSession(RefreshSessionDTO dto) {
         logger.info("AuthService.refreshSession - Starting");
-        SessionOutputDTO session = identityProviderGateway.refreshSession(
-                new RefreshSessionInputDTO(dto.refreshToken())
-        );
+        SessionOutputDTO session;
+        try {
+            session = identityProviderGateway.refreshSession(new RefreshSessionInputDTO(dto.refreshToken()));
+        } catch (InvalidRefreshTokenException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            logger.error("AuthService.refreshSession - Failed to refresh the session", ex);
+            throw new SessionException();
+        }
+
         logger.info("AuthService.refreshSession - Successfully finished");
         return session;
     }
 
     public void deleteSession(DeleteSessionDTO dto) {
         logger.info("AuthService.deleteSession - Starting");
-        identityProviderGateway.deleteSession(new DeleteSessionInputDTO(dto.refreshToken()));
+        try {
+            identityProviderGateway.deleteSession(new DeleteSessionInputDTO(dto.refreshToken()));
+        } catch (InvalidRefreshTokenException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            logger.error("AuthService.deleteSession - Failed to delete the session", ex);
+            throw new SessionException();
+        }
+
         logger.info("AuthService.deleteSession - Successfully finished");
     }
 
@@ -83,6 +109,10 @@ public class AuthService {
 
         LegalPerson legalPerson = null;
         if (legalPersonKey != null) {
+            logger.info(
+                    "AuthService.getSession - Resolving the legal person of the session {}",
+                    Map.of("person_key", personKey, "legal_person_key", legalPersonKey)
+            );
             legalPerson = legalPersonRepository.findByPersonKey(legalPersonKey).orElseThrow(() -> {
                 logger.warn(
                         "AuthService.getSession - Legal person not found {}",
