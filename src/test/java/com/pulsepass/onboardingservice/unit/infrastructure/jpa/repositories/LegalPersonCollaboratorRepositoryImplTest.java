@@ -12,6 +12,7 @@ import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonAddress;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaborator;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorStatus;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorStatusEnum;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCompanyType;
 import com.pulsepass.onboardingservice.domain.entities.NaturalPerson;
 import com.pulsepass.onboardingservice.domain.entities.Person;
@@ -22,6 +23,7 @@ import com.pulsepass.onboardingservice.infrastructure.jpa.repositories.LegalPers
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -117,5 +119,60 @@ class LegalPersonCollaboratorRepositoryImplTest {
                 .thenReturn(new PageImpl<LegalPersonCollaboratorEntity>(List.of()));
 
         assertThat(repository.findAll("person-key", null, 1, 30)).isEmpty();
+    }
+
+    @Test
+    void findAllByLegalPersonKeyAndStatus_activeStatus_returnsMappedDomainsUsingEnumeratorName() {
+        var legal = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
+                "12345678000195", "Acme", NOW, NOW), "acme@mail.com",
+                new LegalPersonAddress(4L, "address-key", "90110220", "Rua Ismael Chaves Barcelos", "60",
+                        "Sala 2", "Praia de Belas", NOW, NOW),
+                new LegalPersonCompanyType(5L, "LIMITED", NOW), new BigDecimal("25000.00"), NOW, NOW);
+        var natural = new NaturalPerson(2L, new Person(2L, "owner-key", new PersonType(2L, "NATURAL", NOW),
+                "52998224725", "John Doe", NOW, NOW), "john@mail.com", NOW, NOW);
+        var domain = new LegalPersonCollaborator(4L, "collab-key", legal, natural,
+                new CollaboratorRole(1L, "OWNER", NOW), new LegalPersonCollaboratorStatus(1L, "ACTIVE", NOW), NOW, NOW);
+        when(jpaRepository.findAllByLegalPersonPersonPersonKeyAndLegalPersonCollaboratorStatusEnumerator(
+                "person-key", "ACTIVE")).thenReturn(List.of(LegalPersonCollaboratorEntity.fromDomain(domain)));
+
+        var result = repository.findAllByLegalPersonKeyAndStatus(
+                "person-key", LegalPersonCollaboratorStatusEnum.ACTIVE);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0)).usingRecursiveComparison().isEqualTo(domain);
+    }
+
+    @Test
+    void findAllByLegalPersonKeyAndStatus_noneFound_returnsEmptyList() {
+        when(jpaRepository.findAllByLegalPersonPersonPersonKeyAndLegalPersonCollaboratorStatusEnumerator(
+                "person-key", "ACTIVE")).thenReturn(List.of());
+
+        assertThat(repository.findAllByLegalPersonKeyAndStatus(
+                "person-key", LegalPersonCollaboratorStatusEnum.ACTIVE)).isEmpty();
+    }
+
+    @Test
+    void findForUpdateByLegalPersonCollaboratorKey_existing_returnsMappedDomain() {
+        var legal = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
+                "12345678000195", "Acme", NOW, NOW), "acme@mail.com",
+                new LegalPersonAddress(4L, "address-key", "90110220", "Rua Ismael Chaves Barcelos", "60",
+                        "Sala 2", "Praia de Belas", NOW, NOW),
+                new LegalPersonCompanyType(5L, "LIMITED", NOW), new BigDecimal("25000.00"), NOW, NOW);
+        var natural = new NaturalPerson(2L, new Person(2L, "owner-key", new PersonType(2L, "NATURAL", NOW),
+                "52998224725", "John Doe", NOW, NOW), "john@mail.com", NOW, NOW);
+        var domain = new LegalPersonCollaborator(4L, "collab-key", legal, natural,
+                new CollaboratorRole(1L, "OWNER", NOW), new LegalPersonCollaboratorStatus(1L, "ACTIVE", NOW), NOW, NOW);
+        when(jpaRepository.findForUpdateByLegalPersonCollaboratorKey("collab-key"))
+                .thenReturn(Optional.of(LegalPersonCollaboratorEntity.fromDomain(domain)));
+
+        assertThat(repository.findForUpdateByLegalPersonCollaboratorKey("collab-key")).get()
+                .usingRecursiveComparison().isEqualTo(domain);
+    }
+
+    @Test
+    void findForUpdateByLegalPersonCollaboratorKey_missing_returnsEmpty() {
+        when(jpaRepository.findForUpdateByLegalPersonCollaboratorKey("collab-key")).thenReturn(Optional.empty());
+
+        assertThat(repository.findForUpdateByLegalPersonCollaboratorKey("collab-key")).isEmpty();
     }
 }

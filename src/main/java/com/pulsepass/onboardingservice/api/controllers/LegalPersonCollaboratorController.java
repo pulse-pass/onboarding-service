@@ -10,6 +10,7 @@ import com.pulsepass.onboardingservice.domain.entities.CollaboratorRoleEnum;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -28,6 +29,17 @@ public class LegalPersonCollaboratorController {
     ) {
         this.legalPersonCollaboratorService = legalPersonCollaboratorService;
         this.internalRequestValidator = internalRequestValidator;
+    }
+
+    @DeleteMapping("/onboarding/internal/legal_persons/{legal_person_key}/collaborators")
+    public ResponseEntity<Void> deleteInternalLegalPersonCollaborators(
+            @RequestHeader(value = "internal-token", required = false) String internalToken,
+            @RequestHeader(value = "selected-user-roles", required = false) String selectedUserRoles,
+            @PathVariable("legal_person_key") String legalPersonKey
+    ) {
+        internalRequestValidator.validateInternalTokenOrAdmin(internalToken, selectedUserRoles);
+        legalPersonCollaboratorService.deleteInternalLegalPersonCollaborators(legalPersonKey);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/onboarding/legal_persons/{legal_person_key}/collaborators")

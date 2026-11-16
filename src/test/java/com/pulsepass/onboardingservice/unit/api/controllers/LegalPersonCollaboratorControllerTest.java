@@ -4,7 +4,9 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -22,6 +24,7 @@ import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.exceptions.MissingSelectedAgentKeyException;
 import com.pulsepass.onboardingservice.domain.exceptions.PersonNotFoundException;
 import com.pulsepass.onboardingservice.domain.exceptions.UnauthorizedInternalRequestException;
+import com.pulsepass.onboardingservice.domain.exceptions.UserDeactivationException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -192,5 +195,49 @@ class LegalPersonCollaboratorControllerTest {
                 .andExpect(jsonPath("$.extra_fields[0].error").value("SIZE"));
 
         verifyNoInteractions(legalPersonCollaboratorService);
+    }
+
+    @Test
+    void deleteInternalLegalPersonCollaborators_validToken_returns204WithoutBodyAndValidatesFirst() throws Exception {
+        mockMvc.perform(delete(INTERNAL_URL)
+                        .header("internal-token", "token")
+                        .header("selected-user-roles", "admin"))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+
+        verify(internalRequestValidator).validateInternalTokenOrAdmin("token", "admin");
+        verify(legalPersonCollaboratorService).deleteInternalLegalPersonCollaborators("legal-key");
+    }
+
+    @Test
+    void deleteInternalLegalPersonCollaborators_unauthorized_returns401WithoutDeleting() throws Exception {
+        doThrow(new UnauthorizedInternalRequestException())
+                .when(internalRequestValidator).validateInternalTokenOrAdmin(null, null);
+
+        mockMvc.perform(delete(INTERNAL_URL))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("GEN00401"));
+
+        verifyNoInteractions(legalPersonCollaboratorService);
+    }
+
+    @Test
+    void deleteInternalLegalPersonCollaborators_unknownLegalPerson_returns404() throws Exception {
+        doThrow(new PersonNotFoundException())
+                .when(legalPersonCollaboratorService).deleteInternalLegalPersonCollaborators("legal-key");
+
+        mockMvc.perform(delete(INTERNAL_URL).header("internal-token", "token"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ONB00009"));
+    }
+
+    @Test
+    void deleteInternalLegalPersonCollaborators_deactivationFails_returns422() throws Exception {
+        doThrow(new UserDeactivationException())
+                .when(legalPersonCollaboratorService).deleteInternalLegalPersonCollaborators("legal-key");
+
+        mockMvc.perform(delete(INTERNAL_URL).header("internal-token", "token"))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.code").value("ONB00011"));
     }
 }

@@ -14,3 +14,5 @@ paths:
 - **ONB-070** Logical removal is `DELETE` on the same item (status `DELETED`, only from the allowed source status), answering 204 without a body.
 - **ONB-071** Both routes look the item up by key with the lock (`findForUpdateBy<Key>`, the not-found exception answering 404) and check the source status before the option, inside the transaction.
 - **ONB-072** Every change writes one `<x>_history` row with the old status.
+- **ONB-275** `DELETE /onboarding/internal/legal_persons/{legal_person_key}/collaborators` revokes the access of a removed organization: it marks every `ACTIVE` collaborator `DELETED` (with history) and deactivates each user in the identity provider, answering 204; with no `ACTIVE` collaborator it answers 204 without calling the provider, so a repeated call is safe.
+- **ONB-276** Each collaborator is committed on its own (ONB-279): a provider failure answers 422 `UserDeactivationException`, the collaborator being processed stays `ACTIVE` and the ones before it stay `DELETED` and deactivated, so repeating the call handles only what is left.

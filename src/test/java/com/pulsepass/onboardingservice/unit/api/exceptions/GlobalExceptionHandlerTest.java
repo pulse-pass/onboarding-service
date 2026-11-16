@@ -23,6 +23,7 @@ import com.pulsepass.onboardingservice.domain.exceptions.PersonNotFoundException
 import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.UnauthorizedInternalRequestException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
+import com.pulsepass.onboardingservice.domain.exceptions.UserDeactivationException;
 import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.AfterEach;
@@ -66,6 +67,7 @@ class GlobalExceptionHandlerTest {
         messages.addMessage("error.natural_person.invalid_document", Locale.ENGLISH, "invalid cpf");
         messages.addMessage("error.legal_person_collaborator.invalid_role", Locale.ENGLISH, "invalid role");
         messages.addMessage("error.user.creation", Locale.ENGLISH, "user failed");
+        messages.addMessage("error.user.deactivation", Locale.ENGLISH, "deactivation failed");
         messages.addMessage("error.organization.creation", Locale.ENGLISH, "organization failed");
         messages.addMessage("error.invalid_credentials", Locale.ENGLISH, "invalid credentials");
         messages.addMessage("error.invalid_refresh_token", Locale.ENGLISH, "session expired");
@@ -171,6 +173,15 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(response.getBody())
                 .isEqualTo(new ErrorResponse("Unprocessable Content", "user failed", "ONB00006", List.of()));
+    }
+
+    @Test
+    void handleDomain_userDeactivation_returns422WithOnb00011() {
+        var response = handler.handleDomain(new UserDeactivationException());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(response.getBody())
+                .isEqualTo(new ErrorResponse("Unprocessable Content", "deactivation failed", "ONB00011", List.of()));
     }
 
     @Test

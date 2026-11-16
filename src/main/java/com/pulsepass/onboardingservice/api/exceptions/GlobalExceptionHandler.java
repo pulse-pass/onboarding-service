@@ -16,6 +16,7 @@ import com.pulsepass.onboardingservice.domain.exceptions.PersonNotFoundException
 import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.UnauthorizedInternalRequestException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
+import com.pulsepass.onboardingservice.domain.exceptions.UserDeactivationException;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -49,6 +50,7 @@ public class GlobalExceptionHandler {
             Map.entry(InvalidNaturalPersonDocumentException.class, HttpStatus.BAD_REQUEST),
             Map.entry(InvalidCollaboratorRoleException.class, HttpStatus.BAD_REQUEST),
             Map.entry(UserCreationException.class, HttpStatus.UNPROCESSABLE_CONTENT),
+            Map.entry(UserDeactivationException.class, HttpStatus.UNPROCESSABLE_CONTENT),
             Map.entry(OrganizationCreationException.class, HttpStatus.UNPROCESSABLE_CONTENT),
             Map.entry(InvalidCredentialsException.class, HttpStatus.UNAUTHORIZED),
             Map.entry(InvalidRefreshTokenException.class, HttpStatus.UNAUTHORIZED),
