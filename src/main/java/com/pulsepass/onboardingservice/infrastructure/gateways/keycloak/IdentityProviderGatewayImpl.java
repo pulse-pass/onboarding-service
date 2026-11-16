@@ -42,16 +42,16 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 @Component
-public class KeycloakIdentityProviderGateway implements IdentityProviderGateway {
+public class IdentityProviderGatewayImpl implements IdentityProviderGateway {
 
-    private static final Logger logger = LoggerFactory.getLogger(KeycloakIdentityProviderGateway.class);
+    private static final Logger logger = LoggerFactory.getLogger(IdentityProviderGatewayImpl.class);
 
     private final RestClient restClient;
     private final String realm;
     private final String clientId;
     private final String clientSecret;
 
-    public KeycloakIdentityProviderGateway(
+    public IdentityProviderGatewayImpl(
             @Value("${app.keycloak.url}") String url,
             @Value("${app.keycloak.realm}") String realm,
             @Value("${app.keycloak.client-id}") String clientId,
@@ -82,16 +82,15 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     .body(KeycloakTokenResponse.class);
         } catch (RestClientException ex) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.fetchAccessToken - Token request failed {}",
-                    Map.of("person_key", personKey),
-                    ex
+                    "IdentityProviderGatewayImpl.fetchAccessToken - Token request failed {}",
+                    Map.of("person_key", personKey, "failure", ex.getClass().getSimpleName())
             );
             throw failure.get();
         }
 
         if (response == null) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.fetchAccessToken - Token response without body {}",
+                    "IdentityProviderGatewayImpl.fetchAccessToken - Token response without body {}",
                     Map.of("person_key", personKey)
             );
             throw failure.get();
@@ -120,7 +119,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
 
     private void validateTokenResponse(KeycloakTokenResponse body) {
         if (body == null) {
-            logger.error("KeycloakIdentityProviderGateway.validateTokenResponse - Token response without body");
+            logger.error("IdentityProviderGatewayImpl.validateTokenResponse - Token response without body");
             throw new SessionException();
         }
     }
@@ -128,7 +127,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
     @Override
     public void createUser(CreateUserInputDTO input) {
         logger.info(
-                "KeycloakIdentityProviderGateway.createUser - Creating user {}",
+                "IdentityProviderGatewayImpl.createUser - Creating user {}",
                 Map.of("person_key", input.personKey())
         );
 
@@ -167,16 +166,15 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     .toBodilessEntity();
         } catch (RestClientException ex) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.createUser - User creation request failed {}",
-                    Map.of("person_key", input.personKey()),
-                    ex
+                    "IdentityProviderGatewayImpl.createUser - User creation request failed {}",
+                    Map.of("person_key", input.personKey(), "failure", ex.getClass().getSimpleName())
             );
             throw new UserCreationException();
         }
 
         if (response.getStatusCode() != HttpStatus.CREATED) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.createUser - Unexpected status {}",
+                    "IdentityProviderGatewayImpl.createUser - Unexpected status {}",
                     Map.of("step", "create_user", "status", response.getStatusCode().value())
             );
             throw new UserCreationException();
@@ -198,9 +196,8 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     .toBodilessEntity();
         } catch (RestClientException ex) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.createUser - Role mapping request failed {}",
-                    Map.of("person_key", input.personKey()),
-                    ex
+                    "IdentityProviderGatewayImpl.createUser - Role mapping request failed {}",
+                    Map.of("person_key", input.personKey(), "failure", ex.getClass().getSimpleName())
             );
             throw new UserCreationException();
         }
@@ -209,7 +206,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
     @Override
     public SessionOutputDTO createSession(CreateSessionInputDTO input) {
         logger.info(
-                "KeycloakIdentityProviderGateway.createSession - Creating session {}",
+                "IdentityProviderGatewayImpl.createSession - Creating session {}",
                 Map.of("document_number", input.documentNumber())
         );
 
@@ -230,13 +227,16 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     .onStatus(HttpStatusCode::isError, (request, errorResponse) -> {})
                     .toEntity(KeycloakTokenResponse.class);
         } catch (RestClientException ex) {
-            logger.error("KeycloakIdentityProviderGateway.createSession - Token request failed", ex);
+            logger.error(
+                    "IdentityProviderGatewayImpl.createSession - Token request failed {}",
+                    Map.of("failure", ex.getClass().getSimpleName())
+            );
             throw new SessionException();
         }
 
         if (response.getStatusCode() == HttpStatus.UNAUTHORIZED && isInvalidGrant(response.getBody())) {
             logger.warn(
-                    "KeycloakIdentityProviderGateway.createSession - Invalid credentials {}",
+                    "IdentityProviderGatewayImpl.createSession - Invalid credentials {}",
                     Map.of("document_number", input.documentNumber())
             );
             throw new InvalidCredentialsException();
@@ -244,7 +244,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
 
         if (response.getStatusCode() == HttpStatus.BAD_REQUEST && isInvalidGrant(response.getBody())) {
             logger.warn(
-                    "KeycloakIdentityProviderGateway.createSession - Invalid credentials {}",
+                    "IdentityProviderGatewayImpl.createSession - Invalid credentials {}",
                     Map.of("document_number", input.documentNumber())
             );
             throw new InvalidCredentialsException();
@@ -252,7 +252,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
 
         if (response.getStatusCode() != HttpStatus.OK) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.createSession - Unexpected status {}",
+                    "IdentityProviderGatewayImpl.createSession - Unexpected status {}",
                     Map.of("status", response.getStatusCode().value())
             );
             throw new SessionException();
@@ -272,7 +272,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
 
     @Override
     public SessionOutputDTO refreshSession(RefreshSessionInputDTO input) {
-        logger.info("KeycloakIdentityProviderGateway.refreshSession - Refreshing session");
+        logger.info("IdentityProviderGatewayImpl.refreshSession - Refreshing session");
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type", "refresh_token");
@@ -290,18 +290,21 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     .onStatus(HttpStatusCode::isError, (request, errorResponse) -> {})
                     .toEntity(KeycloakTokenResponse.class);
         } catch (RestClientException ex) {
-            logger.error("KeycloakIdentityProviderGateway.refreshSession - Token request failed", ex);
+            logger.error(
+                    "IdentityProviderGatewayImpl.refreshSession - Token request failed {}",
+                    Map.of("failure", ex.getClass().getSimpleName())
+            );
             throw new SessionException();
         }
 
         if (response.getStatusCode() == HttpStatus.BAD_REQUEST && isInvalidGrant(response.getBody())) {
-            logger.warn("KeycloakIdentityProviderGateway.refreshSession - Invalid refresh token");
+            logger.warn("IdentityProviderGatewayImpl.refreshSession - Invalid refresh token");
             throw new InvalidRefreshTokenException();
         }
 
         if (response.getStatusCode() != HttpStatus.OK) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.refreshSession - Unexpected status {}",
+                    "IdentityProviderGatewayImpl.refreshSession - Unexpected status {}",
                     Map.of("status", response.getStatusCode().value())
             );
             throw new SessionException();
@@ -321,7 +324,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
 
     @Override
     public void deleteSession(DeleteSessionInputDTO input) {
-        logger.info("KeycloakIdentityProviderGateway.deleteSession - Deleting session");
+        logger.info("IdentityProviderGatewayImpl.deleteSession - Deleting session");
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("client_id", this.clientId);
@@ -338,18 +341,21 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     .onStatus(HttpStatusCode::isError, (request, errorResponse) -> {})
                     .toEntity(KeycloakTokenResponse.class);
         } catch (RestClientException ex) {
-            logger.error("KeycloakIdentityProviderGateway.deleteSession - Logout request failed", ex);
+            logger.error(
+                    "IdentityProviderGatewayImpl.deleteSession - Logout request failed {}",
+                    Map.of("failure", ex.getClass().getSimpleName())
+            );
             throw new SessionException();
         }
 
         if (response.getStatusCode() == HttpStatus.BAD_REQUEST && isInvalidGrant(response.getBody())) {
-            logger.warn("KeycloakIdentityProviderGateway.deleteSession - Invalid refresh token");
+            logger.warn("IdentityProviderGatewayImpl.deleteSession - Invalid refresh token");
             throw new InvalidRefreshTokenException();
         }
 
         if (response.getStatusCode() != HttpStatus.NO_CONTENT) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.deleteSession - Unexpected status {}",
+                    "IdentityProviderGatewayImpl.deleteSession - Unexpected status {}",
                     Map.of("status", response.getStatusCode().value())
             );
             throw new SessionException();
@@ -359,7 +365,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
     @Override
     public void deactivateUser(DeactivateUserInputDTO input) {
         logger.info(
-                "KeycloakIdentityProviderGateway.deactivateUser - Deactivating user {}",
+                "IdentityProviderGatewayImpl.deactivateUser - Deactivating user {}",
                 Map.of("person_key", input.personKey())
         );
 
@@ -375,16 +381,15 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     .toEntity(new ParameterizedTypeReference<List<KeycloakUserResponse>>() {});
         } catch (RestClientException ex) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.deactivateUser - User lookup request failed {}",
-                    Map.of("person_key", input.personKey()),
-                    ex
+                    "IdentityProviderGatewayImpl.deactivateUser - User lookup request failed {}",
+                    Map.of("person_key", input.personKey(), "failure", ex.getClass().getSimpleName())
             );
             throw new UserDeactivationException();
         }
 
         if (lookupResponse.getStatusCode() != HttpStatus.OK) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.deactivateUser - Unexpected status on user lookup {}",
+                    "IdentityProviderGatewayImpl.deactivateUser - Unexpected status on user lookup {}",
                     Map.of("person_key", input.personKey(), "status", lookupResponse.getStatusCode().value())
             );
             throw new UserDeactivationException();
@@ -393,7 +398,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
         List<KeycloakUserResponse> users = lookupResponse.getBody();
         if (users == null || users.isEmpty()) {
             logger.warn(
-                    "KeycloakIdentityProviderGateway.deactivateUser - User not found in the identity provider {}",
+                    "IdentityProviderGatewayImpl.deactivateUser - User not found in the identity provider {}",
                     Map.of("person_key", input.personKey())
             );
             return;
@@ -412,16 +417,15 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     .toBodilessEntity();
         } catch (RestClientException ex) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.deactivateUser - User update request failed {}",
-                    Map.of("person_key", input.personKey()),
-                    ex
+                    "IdentityProviderGatewayImpl.deactivateUser - User update request failed {}",
+                    Map.of("person_key", input.personKey(), "failure", ex.getClass().getSimpleName())
             );
             throw new UserDeactivationException();
         }
 
         if (updateResponse.getStatusCode() != HttpStatus.NO_CONTENT) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.deactivateUser - Unexpected status on user update {}",
+                    "IdentityProviderGatewayImpl.deactivateUser - Unexpected status on user update {}",
                     Map.of("person_key", input.personKey(), "status", updateResponse.getStatusCode().value())
             );
             throw new UserDeactivationException();
@@ -437,16 +441,15 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     .toBodilessEntity();
         } catch (RestClientException ex) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.deactivateUser - User logout request failed {}",
-                    Map.of("person_key", input.personKey()),
-                    ex
+                    "IdentityProviderGatewayImpl.deactivateUser - User logout request failed {}",
+                    Map.of("person_key", input.personKey(), "failure", ex.getClass().getSimpleName())
             );
             throw new UserDeactivationException();
         }
 
         if (logoutResponse.getStatusCode() != HttpStatus.NO_CONTENT) {
             logger.error(
-                    "KeycloakIdentityProviderGateway.deactivateUser - Unexpected status on user logout {}",
+                    "IdentityProviderGatewayImpl.deactivateUser - Unexpected status on user logout {}",
                     Map.of("person_key", input.personKey(), "status", logoutResponse.getStatusCode().value())
             );
             throw new UserDeactivationException();

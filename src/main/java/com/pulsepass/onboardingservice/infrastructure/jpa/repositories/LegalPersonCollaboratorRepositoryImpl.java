@@ -67,10 +67,13 @@ public class LegalPersonCollaboratorRepositoryImpl implements LegalPersonCollabo
     }
 
     @Override
-    public boolean existsByLegalPersonKeyAndNaturalPersonKey(String legalPersonKey, String naturalPersonKey) {
-        return jpaRepository.existsByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
+    public Optional<LegalPersonCollaborator> findFirstByLegalPersonKeyAndNaturalPersonKey(
+            String legalPersonKey,
+            String naturalPersonKey
+    ) {
+        return jpaRepository.findFirstByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
                 legalPersonKey,
                 naturalPersonKey
-        );
+        ).map(LegalPersonCollaboratorEntity::toDomain);
     }
 }

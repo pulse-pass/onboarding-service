@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.pulsepass.onboardingservice.domain.exceptions.OrganizationCreationException;
 import com.pulsepass.onboardingservice.domain.gateways.organization.dtos.CreateOrganizationInputDTO;
-import com.pulsepass.onboardingservice.infrastructure.gateways.organizationservice.OrganizationServiceOrganizationGateway;
+import com.pulsepass.onboardingservice.infrastructure.gateways.organizationservice.OrganizationGatewayImpl;
 import com.pulsepass.onboardingservice.unit.infrastructure.gateways.StubHttpServer;
 import com.pulsepass.onboardingservice.unit.infrastructure.gateways.StubHttpServer.Response;
 import java.net.http.HttpClient;
@@ -17,7 +17,7 @@ import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.json.JsonMapper;
 
-class OrganizationServiceOrganizationGatewayTest {
+class OrganizationGatewayImplTest {
 
     private static final String PATH = "/organization/internal/organizations";
     private static final String TOKEN = "internal-secret";
@@ -26,7 +26,7 @@ class OrganizationServiceOrganizationGatewayTest {
 
     private final JsonMapper mapper = JsonMapper.builder().build();
     private StubHttpServer server;
-    private OrganizationServiceOrganizationGateway gateway;
+    private OrganizationGatewayImpl gateway;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -37,7 +37,7 @@ class OrganizationServiceOrganizationGatewayTest {
                 .build();
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(Duration.ofMillis(300));
-        gateway = new OrganizationServiceOrganizationGateway(
+        gateway = new OrganizationGatewayImpl(
                 server.url(), TOKEN, RestClient.builder().requestFactory(requestFactory));
     }
 

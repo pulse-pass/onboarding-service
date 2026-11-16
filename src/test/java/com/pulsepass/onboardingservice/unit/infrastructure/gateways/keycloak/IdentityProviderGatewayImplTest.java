@@ -15,7 +15,7 @@ import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.Dea
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeleteSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.RefreshSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.UserRoleInputDTO;
-import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.KeycloakIdentityProviderGateway;
+import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.IdentityProviderGatewayImpl;
 import com.pulsepass.onboardingservice.unit.infrastructure.gateways.StubHttpServer;
 import com.pulsepass.onboardingservice.unit.infrastructure.gateways.StubHttpServer.Response;
 import java.net.http.HttpClient;
@@ -31,7 +31,7 @@ import org.springframework.web.client.RestClientException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-class KeycloakIdentityProviderGatewayTest {
+class IdentityProviderGatewayImplTest {
 
     private static final String REALM = "pulse-pass";
     private static final String TOKEN_PATH = "/realms/pulse-pass/protocol/openid-connect/token";
@@ -47,7 +47,7 @@ class KeycloakIdentityProviderGatewayTest {
 
     private final JsonMapper mapper = JsonMapper.builder().build();
     private StubHttpServer server;
-    private KeycloakIdentityProviderGateway gateway;
+    private IdentityProviderGatewayImpl gateway;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -58,7 +58,7 @@ class KeycloakIdentityProviderGatewayTest {
                 .build();
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(Duration.ofMillis(300));
-        gateway = new KeycloakIdentityProviderGateway(
+        gateway = new IdentityProviderGatewayImpl(
                 server.url(), REALM, "onboarding-service", "client-secret",
                 RestClient.builder().requestFactory(requestFactory));
     }

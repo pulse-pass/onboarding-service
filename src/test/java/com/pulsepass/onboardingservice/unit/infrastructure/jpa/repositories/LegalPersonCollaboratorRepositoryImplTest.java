@@ -69,19 +69,29 @@ class LegalPersonCollaboratorRepositoryImplTest {
     }
 
     @Test
-    void existsByLegalPersonKeyAndNaturalPersonKey_linked_returnsTrue() {
-        when(jpaRepository.existsByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
-                "legal-key", "natural-key")).thenReturn(true);
+    void findFirstByLegalPersonKeyAndNaturalPersonKey_linked_returnsMappedDomain() {
+        var legal = new LegalPerson(3L, new Person(1L, "person-key", new PersonType(1L, "LEGAL", NOW),
+                "12345678000195", "Acme", NOW, NOW), "acme@mail.com",
+                new LegalPersonAddress(4L, "address-key", "90110220", "Rua Ismael Chaves Barcelos", "60",
+                        "Sala 2", "Praia de Belas", NOW, NOW),
+                new LegalPersonCompanyType(5L, "LIMITED", NOW), new BigDecimal("25000.00"), NOW, NOW);
+        var natural = new NaturalPerson(2L, new Person(2L, "owner-key", new PersonType(2L, "NATURAL", NOW),
+                "52998224725", "John Doe", NOW, NOW), "john@mail.com", NOW, NOW);
+        var domain = new LegalPersonCollaborator(4L, "collab-key", legal, natural,
+                new CollaboratorRole(1L, "OWNER", NOW), new LegalPersonCollaboratorStatus(1L, "ACTIVE", NOW), NOW, NOW);
+        when(jpaRepository.findFirstByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
+                "person-key", "owner-key")).thenReturn(Optional.of(LegalPersonCollaboratorEntity.fromDomain(domain)));
 
-        assertThat(repository.existsByLegalPersonKeyAndNaturalPersonKey("legal-key", "natural-key")).isTrue();
+        assertThat(repository.findFirstByLegalPersonKeyAndNaturalPersonKey("person-key", "owner-key")).get()
+                .usingRecursiveComparison().isEqualTo(domain);
     }
 
     @Test
-    void existsByLegalPersonKeyAndNaturalPersonKey_notLinked_returnsFalse() {
-        when(jpaRepository.existsByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
-                "legal-key", "natural-key")).thenReturn(false);
+    void findFirstByLegalPersonKeyAndNaturalPersonKey_notLinked_returnsEmpty() {
+        when(jpaRepository.findFirstByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
+                "legal-key", "natural-key")).thenReturn(Optional.empty());
 
-        assertThat(repository.existsByLegalPersonKeyAndNaturalPersonKey("legal-key", "natural-key")).isFalse();
+        assertThat(repository.findFirstByLegalPersonKeyAndNaturalPersonKey("legal-key", "natural-key")).isEmpty();
     }
 
     @Test
