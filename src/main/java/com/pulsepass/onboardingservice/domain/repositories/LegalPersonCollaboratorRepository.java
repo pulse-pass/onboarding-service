@@ -18,5 +18,6 @@ public interface LegalPersonCollaboratorRepository {
 
     Optional<LegalPersonCollaborator> findForUpdateByLegalPersonCollaboratorKey(String legalPersonCollaboratorKey);
 
-    boolean existsByLegalPersonKeyAndNaturalPersonKey(String legalPersonKey, String naturalPersonKey);
+    Optional<LegalPersonCollaborator> findFirstByLegalPersonKeyAndNaturalPersonKey(
+            String legalPersonKey, String naturalPersonKey);
 }

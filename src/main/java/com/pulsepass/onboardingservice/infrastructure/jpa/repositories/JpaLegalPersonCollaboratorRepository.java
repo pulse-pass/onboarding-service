@@ -22,7 +22,7 @@ public interface JpaLegalPersonCollaboratorRepository extends JpaRepository<Lega
             String legalPersonCollaboratorKey
     );
 
-    boolean existsByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
+    Optional<LegalPersonCollaboratorEntity> findFirstByLegalPersonPersonPersonKeyAndNaturalPersonPersonPersonKey(
             String legalPersonKey,
             String naturalPersonKey
     );

@@ -122,7 +122,8 @@ public class AuthService {
             });
 
             boolean collaborator = legalPersonCollaboratorRepository
-                    .existsByLegalPersonKeyAndNaturalPersonKey(legalPersonKey, personKey);
+                    .findFirstByLegalPersonKeyAndNaturalPersonKey(legalPersonKey, personKey)
+                    .isPresent();
             if (!collaborator) {
                 logger.warn(
                         "AuthService.getSession - Person is not a collaborator of the legal person {}",

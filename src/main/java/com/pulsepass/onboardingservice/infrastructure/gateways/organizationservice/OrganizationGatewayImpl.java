@@ -18,14 +18,14 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 @Component
-public class OrganizationServiceOrganizationGateway implements OrganizationGateway {
+public class OrganizationGatewayImpl implements OrganizationGateway {
 
-    private static final Logger logger = LoggerFactory.getLogger(OrganizationServiceOrganizationGateway.class);
+    private static final Logger logger = LoggerFactory.getLogger(OrganizationGatewayImpl.class);
 
     private final RestClient restClient;
     private final String internalToken;
 
-    public OrganizationServiceOrganizationGateway(
+    public OrganizationGatewayImpl(
             @Value("${app.organization-service.url}") String url,
             @Value("${app.internal-token}") String internalToken,
             RestClient.Builder restClientBuilder
@@ -39,7 +39,7 @@ public class OrganizationServiceOrganizationGateway implements OrganizationGatew
     @Override
     public CreateOrganizationOutputDTO createOrganization(CreateOrganizationInputDTO input) {
         logger.info(
-                "OrganizationServiceOrganizationGateway.createOrganization - Creating organization {}",
+                "OrganizationGatewayImpl.createOrganization - Creating organization {}",
                 Map.of("legal_person_key", input.legalPersonKey())
         );
 
@@ -60,7 +60,7 @@ public class OrganizationServiceOrganizationGateway implements OrganizationGatew
                     .toEntity(OrganizationServiceCreateOrganizationResponse.class);
         } catch (RestClientException ex) {
             logger.error(
-                    "OrganizationServiceOrganizationGateway.createOrganization - Request failed {}",
+                    "OrganizationGatewayImpl.createOrganization - Request failed {}",
                     Map.of("legal_person_key", input.legalPersonKey()),
                     ex
             );
@@ -69,14 +69,14 @@ public class OrganizationServiceOrganizationGateway implements OrganizationGatew
 
         if (response.getStatusCode() != HttpStatus.CREATED) {
             logger.error(
-                    "OrganizationServiceOrganizationGateway.createOrganization - Unexpected status {}",
+                    "OrganizationGatewayImpl.createOrganization - Unexpected status {}",
                     Map.of("step", "create_organization", "status", response.getStatusCode().value())
             );
             throw new OrganizationCreationException();
         }
         if (response.getBody() == null) {
             logger.error(
-                    "OrganizationServiceOrganizationGateway.createOrganization - Response without body {}",
+                    "OrganizationGatewayImpl.createOrganization - Response without body {}",
                     Map.of("step", "create_organization", "status", response.getStatusCode().value())
             );
             throw new OrganizationCreationException();

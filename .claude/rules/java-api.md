@@ -42,7 +42,7 @@ paths:
 - **ONB-105** The service returns `GetSessionDTO` and the response is `GetSessionResponse` (`fromDTO`) `{person_key, name, document_number, roles, legal_person}`.
 - **ONB-106** `legal_person` (`SessionLegalPersonResponse`) is `{legal_person_key, name}` or `null` (still present in the JSON) when there is no agent key.
 - **ONB-107** A person that does not exist, an agent key that matches no company, or a person who is not a collaborator of that company throws `InvalidSessionException` → 401 `GEN00401` (`error.invalid_session`, generic authentication error like the others).
-- **ONB-108** Those three checks run in this order, regardless of the collaborator status (`LegalPersonCollaboratorRepository.existsByLegalPersonKeyAndNaturalPersonKey`), each failure with a `warn` log carrying `person_key` and `legal_person_key`.
+- **ONB-108** Those three checks run in this order, regardless of the collaborator status (`LegalPersonCollaboratorRepository.findFirstByLegalPersonKeyAndNaturalPersonKey`), each failure with a `warn` log carrying `person_key` and `legal_person_key`.
 - **ONB-109** `findByPersonKey` on `LegalPersonRepository` receives the `person_key` of the legal person, which is the `legal_person_key`.
 - **ONB-110** Authentication routes (`/onboarding/auth/login`, `/refresh`, `/logout`) only relay the identity provider session: the tokens issued by Keycloak go back untouched in `CreateSessionResponse`.
 - **ONB-111** `invalid_grant` becomes 401 `GEN00401` (`InvalidCredentialsException` on login, `InvalidRefreshTokenException` on refresh and logout).

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,6 +14,7 @@ import com.pulsepass.onboardingservice.application.dtos.input.DeleteSessionDTO;
 import com.pulsepass.onboardingservice.application.dtos.input.RefreshSessionDTO;
 import com.pulsepass.onboardingservice.application.services.AuthService;
 import com.pulsepass.onboardingservice.domain.entities.LegalPerson;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaborator;
 import com.pulsepass.onboardingservice.domain.entities.Person;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
@@ -151,10 +153,11 @@ class AuthServiceTest {
 
     @Test
     void getSession_organizerWithLegalPerson_returnsPersonRolesAndLegalPerson() {
+        var collaborator = mock(LegalPersonCollaborator.class);
         when(personRepository.findByPersonKey("person-key")).thenReturn(Optional.of(person));
         when(legalPersonRepository.findByPersonKey("legal-person-key")).thenReturn(Optional.of(legalPerson));
-        when(legalPersonCollaboratorRepository.existsByLegalPersonKeyAndNaturalPersonKey(
-                "legal-person-key", "person-key")).thenReturn(true);
+        when(legalPersonCollaboratorRepository.findFirstByLegalPersonKeyAndNaturalPersonKey(
+                "legal-person-key", "person-key")).thenReturn(Optional.of(collaborator));
 
         var result = service.getSession("person-key", "legal-person-key", "offline_access,organizer");
 
@@ -173,7 +176,7 @@ class AuthServiceTest {
         assertThat(result.legalPerson()).isNull();
         assertThat(result.roles()).containsExactly("admin");
         verify(legalPersonRepository, never()).findByPersonKey(any());
-        verify(legalPersonCollaboratorRepository, never()).existsByLegalPersonKeyAndNaturalPersonKey(any(), any());
+        verify(legalPersonCollaboratorRepository, never()).findFirstByLegalPersonKeyAndNaturalPersonKey(any(), any());
     }
 
     @Test
@@ -198,8 +201,8 @@ class AuthServiceTest {
     void getSession_notCollaboratorOfLegalPerson_throwsInvalidSession() {
         when(personRepository.findByPersonKey("person-key")).thenReturn(Optional.of(person));
         when(legalPersonRepository.findByPersonKey("legal-person-key")).thenReturn(Optional.of(legalPerson));
-        when(legalPersonCollaboratorRepository.existsByLegalPersonKeyAndNaturalPersonKey(
-                "legal-person-key", "person-key")).thenReturn(false);
+        when(legalPersonCollaboratorRepository.findFirstByLegalPersonKeyAndNaturalPersonKey(
+                "legal-person-key", "person-key")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.getSession("person-key", "legal-person-key", "organizer"))
                 .isInstanceOf(InvalidSessionException.class);

@@ -8,7 +8,7 @@ paths:
 
 - **ONB-173** Logs follow `ClassName.method - message`.
 - **ONB-174** The message is literal text; data goes in a single `Map` argument (`logger.error("X.y - Failed to create the user {}", Map.of("person_key", key), e)`), never interpolated in the sentence.
-- **ONB-175** The exception is passed as the last argument, never `e.getMessage()`.
+- **ONB-175** The exception is passed as the last argument, never `e.getMessage()`, except where a gateway rule forbids passing it because its message embeds a body or a URL.
 - **ONB-176** A log never receives a value that came straight from the request (path variable, query string, body), which Sonar flags as log injection (`javasecurity:S5145`) and fails the quality gate.
 - **ONB-177** Log the value of the loaded entity (e.g. its `personKey`) instead, or leave it out when nothing was loaded yet.
 - **ONB-178** In the application layer, every `if` that changes the flow has a log as its first line: `logger.warn` when it refuses the request, `logger.info` when it takes another path.

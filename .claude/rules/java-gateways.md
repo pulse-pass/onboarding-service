@@ -17,7 +17,7 @@ paths:
 - **ONB-152** The domain interface is named after the role or the internal service (`IdentityProviderGateway`, `OrganizationGateway`).
 - **ONB-153** Each gateway has its own folder in `domain/gateways/<gateway>/` (named after the gateway, not the provider), holding the interface and a `dtos/` folder (e.g. `identityprovider/IdentityProviderGateway`, `identityprovider/dtos/CreateUserInputDTO`).
 - **ONB-154** The interface receives and returns those DTOs, named after the operation, never loose parameters.
-- **ONB-155** The implementation lives in `infrastructure/gateways/<provider>/`, carries the name of the system, one class per system (e.g. `keycloak/KeycloakGateway`, `organizationservice/OrganizationServiceGateway`), and uses `RestClient`.
+- **ONB-155** The implementation lives in `infrastructure/gateways/<provider>/`, is named after the domain interface with the `Impl` suffix, like the `*RepositoryImpl` (e.g. `keycloak/IdentityProviderGatewayImpl`, `organizationservice/OrganizationGatewayImpl`), so the system appears only in the folder; one class per system, using `RestClient`.
 - **ONB-156** Request and response bodies are typed records in `infrastructure/gateways/<provider>/dtos` (`<Provider><Operation>Request` / `Response`) with `@JsonProperty` on every field; no `Map` bodies.
 
 ## Configuration
@@ -41,6 +41,8 @@ paths:
 - **ONB-278** `deactivateUser` finds the user by username (the CPF, `GET users?username=&exact=true`), because the Keycloak id is not stored; then it sets `enabled` false and logs the user out (`POST users/{id}/logout`). A user that does not exist is logged as `warn` and skipped. The CPF is never logged.
 - **ONB-171** Other auxiliary calls (lookups such as the role) run before the operation, outside its `try`, and fail with a generic exception (`IllegalStateException` or the `RestClientException` itself) → 500 `GEN00500`.
 - **ONB-172** Reading the error status of the token endpoint uses `onStatus` with an empty handler so the status and body checks come after the single `try` around the call.
+- **ONB-280** A gateway whose request or response body carries a secret (password, API key, token) never logs the response body nor passes the exception to the logger, because `RestClientResponseException` messages embed the body.
+- **ONB-281** Such a gateway logs only the `Map` with the key of the resource, the HTTP status, the error codes and the exception class name.
 
 ## Token renewal
 
