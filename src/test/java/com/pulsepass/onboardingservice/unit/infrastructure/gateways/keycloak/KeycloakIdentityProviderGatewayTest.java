@@ -8,8 +8,10 @@ import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsExcep
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
 import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
+import com.pulsepass.onboardingservice.domain.exceptions.UserDeactivationException;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateUserInputDTO;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeactivateUserInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeleteSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.RefreshSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.UserRoleInputDTO;
@@ -504,5 +506,128 @@ class KeycloakIdentityProviderGatewayTest {
 
         assertThatThrownBy(() -> gateway.deleteSession(new DeleteSessionInputDTO("refresh")))
                 .isInstanceOf(SessionException.class);
+    }
+
+    private void stubDeactivationHappyPath() {
+        server.on("POST", TOKEN_PATH,
+                Response.of(200, "{\"access_token\":\"tok\",\"expires_in\":60}"));
+        server.on("GET", USERS_PATH,
+                Response.of(200, "[{\"id\":\"user-id\",\"username\":\"52998224725\",\"enabled\":true}]"));
+        server.on("PUT", USER_PATH, Response.empty(204));
+        server.on("POST", USER_PATH + "/logout", Response.empty(204));
+    }
+
+    @Test
+    void deactivateUser_existingUser_disablesUserAndRevokesSessionsInOrder() throws Exception {
+        stubDeactivationHappyPath();
+
+        assertThatCode(() -> gateway.deactivateUser(new DeactivateUserInputDTO("owner-key", "52998224725")))
+                .doesNotThrowAnyException();
+
+        assertThat(server.received()).extracting(r -> r.method() + " " + r.path()).containsExactly(
+                "POST " + TOKEN_PATH,
+                "GET " + USERS_PATH,
+                "PUT " + USER_PATH,
+                "POST " + USER_PATH + "/logout");
+        var update = requestTo("PUT", USER_PATH);
+        assertThat(update.headers().get("authorization")).isEqualTo("Bearer tok");
+        assertThat(update.headers().get("content-type")).startsWith("application/json");
+        assertThat(mapper.readTree(update.body()).get("enabled").asBoolean()).isFalse();
+        assertThat(requestTo("POST", USER_PATH + "/logout").headers().get("authorization")).isEqualTo("Bearer tok");
+    }
+
+    @Test
+    void deactivateUser_userNotFound_returnsWithoutUpdatingNorLoggingOut() {
+        server.on("POST", TOKEN_PATH,
+                Response.of(200, "{\"access_token\":\"tok\",\"expires_in\":60}"));
+        server.on("GET", USERS_PATH, Response.of(200, "[]"));
+
+        assertThatCode(() -> gateway.deactivateUser(new DeactivateUserInputDTO("owner-key", "52998224725")))
+                .doesNotThrowAnyException();
+
+        assertThat(wasCalled("PUT", USER_PATH)).isFalse();
+        assertThat(wasCalled("POST", USER_PATH + "/logout")).isFalse();
+    }
+
+    @Test
+    void deactivateUser_tokenEndpointFails_throwsUserDeactivationException() {
+        server.on("POST", TOKEN_PATH, Response.of(401, "{\"error\":\"unauthorized_client\"}"));
+
+        assertThatThrownBy(() -> gateway.deactivateUser(new DeactivateUserInputDTO("owner-key", "52998224725")))
+                .isInstanceOf(UserDeactivationException.class);
+
+        assertThat(wasCalled("GET", USERS_PATH)).isFalse();
+    }
+
+    @Test
+    void deactivateUser_lookupFails_throwsUserDeactivationExceptionWithoutUpdating() {
+        server.on("POST", TOKEN_PATH,
+                Response.of(200, "{\"access_token\":\"tok\",\"expires_in\":60}"));
+        server.on("GET", USERS_PATH, Response.of(500, "{}"));
+
+        assertThatThrownBy(() -> gateway.deactivateUser(new DeactivateUserInputDTO("owner-key", "52998224725")))
+                .isInstanceOf(UserDeactivationException.class);
+
+        assertThat(wasCalled("PUT", USER_PATH)).isFalse();
+    }
+
+    @Test
+    void deactivateUser_lookupReturnsForbidden_throwsUserDeactivationExceptionWithoutUpdating() {
+        server.on("POST", TOKEN_PATH,
+                Response.of(200, "{\"access_token\":\"tok\",\"expires_in\":60}"));
+        server.on("GET", USERS_PATH, Response.of(403, "{}"));
+
+        assertThatThrownBy(() -> gateway.deactivateUser(new DeactivateUserInputDTO("owner-key", "52998224725")))
+                .isInstanceOf(UserDeactivationException.class);
+
+        assertThat(wasCalled("PUT", USER_PATH)).isFalse();
+    }
+
+    @Test
+    void deactivateUser_updateReturnsServerError_throwsUserDeactivationExceptionWithoutLogout() {
+        stubDeactivationHappyPath();
+        server.on("PUT", USER_PATH, Response.of(500, "{}"));
+
+        assertThatThrownBy(() -> gateway.deactivateUser(new DeactivateUserInputDTO("owner-key", "52998224725")))
+                .isInstanceOf(UserDeactivationException.class);
+
+        assertThat(wasCalled("POST", USER_PATH + "/logout")).isFalse();
+    }
+
+    @Test
+    void deactivateUser_logoutReturnsServerError_throwsUserDeactivationException() {
+        stubDeactivationHappyPath();
+        server.on("POST", USER_PATH + "/logout", Response.of(500, "{}"));
+
+        assertThatThrownBy(() -> gateway.deactivateUser(new DeactivateUserInputDTO("owner-key", "52998224725")))
+                .isInstanceOf(UserDeactivationException.class);
+    }
+
+    @Test
+    void deactivateUser_logoutReadTimeoutExceeded_throwsUserDeactivationException() {
+        stubDeactivationHappyPath();
+        server.delay("POST", USER_PATH + "/logout", 1500);
+
+        assertThatThrownBy(() -> gateway.deactivateUser(new DeactivateUserInputDTO("owner-key", "52998224725")))
+                .isInstanceOf(UserDeactivationException.class);
+
+        assertThat(wasCalled("POST", USER_PATH + "/logout")).isTrue();
+    }
+
+    @Test
+    void deactivateUser_updateReturnsUnexpectedOkStatus_throwsUserDeactivationException() {
+        stubDeactivationHappyPath();
+        server.on("PUT", USER_PATH, Response.empty(200));
+
+        assertThatThrownBy(() -> gateway.deactivateUser(new DeactivateUserInputDTO("owner-key", "52998224725")))
+                .isInstanceOf(UserDeactivationException.class);
+    }
+
+    @Test
+    void deactivateUser_serverDown_throwsUserDeactivationException() {
+        server.close();
+
+        assertThatThrownBy(() -> gateway.deactivateUser(new DeactivateUserInputDTO("owner-key", "52998224725")))
+                .isInstanceOf(UserDeactivationException.class);
     }
 }

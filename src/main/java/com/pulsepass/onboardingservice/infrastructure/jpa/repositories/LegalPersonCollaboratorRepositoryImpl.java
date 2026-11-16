@@ -2,10 +2,12 @@ package com.pulsepass.onboardingservice.infrastructure.jpa.repositories;
 
 import com.pulsepass.onboardingservice.domain.entities.CollaboratorRoleEnum;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaborator;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorStatusEnum;
 import com.pulsepass.onboardingservice.domain.repositories.LegalPersonCollaboratorRepository;
 import com.pulsepass.onboardingservice.infrastructure.jpa.entities.LegalPersonCollaboratorEntity;
 import com.pulsepass.onboardingservice.infrastructure.jpa.specifications.LegalPersonCollaboratorSpecification;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
@@ -39,6 +41,29 @@ public class LegalPersonCollaboratorRepositoryImpl implements LegalPersonCollabo
                 Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))
         );
         return jpaRepository.findAll(spec, pageable).map(LegalPersonCollaboratorEntity::toDomain).getContent();
+    }
+
+    @Override
+    public List<LegalPersonCollaborator> findAllByLegalPersonKeyAndStatus(
+            String legalPersonKey,
+            LegalPersonCollaboratorStatusEnum status
+    ) {
+        return jpaRepository
+                .findAllByLegalPersonPersonPersonKeyAndLegalPersonCollaboratorStatusEnumerator(
+                        legalPersonKey,
+                        status.name()
+                )
+                .stream()
+                .map(LegalPersonCollaboratorEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<LegalPersonCollaborator> findForUpdateByLegalPersonCollaboratorKey(
+            String legalPersonCollaboratorKey
+    ) {
+        return jpaRepository.findForUpdateByLegalPersonCollaboratorKey(legalPersonCollaboratorKey)
+                .map(LegalPersonCollaboratorEntity::toDomain);
     }
 
     @Override

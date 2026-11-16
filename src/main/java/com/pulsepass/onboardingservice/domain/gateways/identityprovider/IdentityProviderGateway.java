@@ -2,6 +2,7 @@ package com.pulsepass.onboardingservice.domain.gateways.identityprovider;
 
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateUserInputDTO;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeactivateUserInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeleteSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.RefreshSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.SessionOutputDTO;
@@ -15,4 +16,6 @@ public interface IdentityProviderGateway {
     SessionOutputDTO refreshSession(RefreshSessionInputDTO input);
 
     void deleteSession(DeleteSessionInputDTO input);
+
+    void deactivateUser(DeactivateUserInputDTO input);
 }

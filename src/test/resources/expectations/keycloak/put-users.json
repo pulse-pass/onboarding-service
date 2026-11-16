@@ -1,0 +1,9 @@
+{
+  "httpRequest": {
+    "method": "PUT",
+    "path": "/admin/realms/pulse-pass/users/{user_id}"
+  },
+  "httpResponse": {
+    "statusCode": 204
+  }
+}

@@ -2,7 +2,9 @@ package com.pulsepass.onboardingservice.domain.repositories;
 
 import com.pulsepass.onboardingservice.domain.entities.CollaboratorRoleEnum;
 import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaborator;
+import com.pulsepass.onboardingservice.domain.entities.LegalPersonCollaboratorStatusEnum;
 import java.util.List;
+import java.util.Optional;
 
 public interface LegalPersonCollaboratorRepository {
 
@@ -10,6 +12,11 @@ public interface LegalPersonCollaboratorRepository {
 
     List<LegalPersonCollaborator> findAll(
             String legalPersonKey, CollaboratorRoleEnum collaboratorRole, int page, int pageSize);
+
+    List<LegalPersonCollaborator> findAllByLegalPersonKeyAndStatus(
+            String legalPersonKey, LegalPersonCollaboratorStatusEnum status);
+
+    Optional<LegalPersonCollaborator> findForUpdateByLegalPersonCollaboratorKey(String legalPersonCollaboratorKey);
 
     boolean existsByLegalPersonKeyAndNaturalPersonKey(String legalPersonKey, String naturalPersonKey);
 }

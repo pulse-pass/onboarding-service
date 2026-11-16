@@ -37,6 +37,8 @@ paths:
 - **ONB-168** Every gateway call in a service is inside a `try` with a `catch (Exception ex)`: any failure of the call is logged and becomes the domain exception of the operation, so it never leaves as a 500.
 - **ONB-169** A domain exception with a different meaning for the client (e.g. `InvalidCredentialsException`, `InvalidRefreshTokenException`) gets its own `catch` before it and is rethrown.
 - **ONB-170** The access token is part of the operation: its failure (transport, error status or no token in the body) is logged and becomes the same domain exception (e.g. `UserCreationException`).
+- **ONB-277** `fetchAccessToken` receives the exception of the operation (`Supplier<DomainException>`, e.g. `UserCreationException::new`, `UserDeactivationException::new`), so a token failure becomes the error of the operation that asked for it.
+- **ONB-278** `deactivateUser` finds the user by username (the CPF, `GET users?username=&exact=true`), because the Keycloak id is not stored; then it sets `enabled` false and logs the user out (`POST users/{id}/logout`). A user that does not exist is logged as `warn` and skipped. The CPF is never logged.
 - **ONB-171** Other auxiliary calls (lookups such as the role) run before the operation, outside its `try`, and fail with a generic exception (`IllegalStateException` or the `RestClientException` itself) → 500 `GEN00500`.
 - **ONB-172** Reading the error status of the token endpoint uses `onStatus` with an empty handler so the status and body checks come after the single `try` around the call.
 

@@ -16,6 +16,7 @@ paths:
 - **ONB-184** No manual rollback in services: the `JpaUnitOfWork` `cleanup()` rolls back at the end of the request.
 - **ONB-185** Updating an existing record: the lookup of the item is `findForUpdateBy<Key>`, with the same name in the domain repository, the `*RepositoryImpl` and the `Jpa*Repository`.
 - **ONB-186** In the `Jpa*Repository` it is a derived query with `@Lock(LockModeType.PESSIMISTIC_WRITE)` and no `@Query`; `ForUpdate` goes before `By` because Spring Data reads everything after `By` as criteria.
+- **ONB-279** Updating several records that each call an external system runs one transaction per record: the list is read without a lock before the loop, and each iteration does `begin()`, `findForUpdateBy<Key>` on the item (skipping it with `continue` when it no longer has the source status, its lock held until the next `commit()` or the end of the request), the writes, the external call and `commit()`, so the database follows the external system item by item.
 - **ONB-187** The lookup with the lock is the first call after `unitOfWork.begin()`.
 - **ONB-188** The validations that depend on the item come right after it, inside the transaction (the `cleanup()` rolls back).
 - **ONB-189** Lookups of domain tables still go before `begin()`.

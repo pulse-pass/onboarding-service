@@ -1,12 +1,15 @@
 package com.pulsepass.onboardingservice.infrastructure.gateways.keycloak;
 
+import com.pulsepass.onboardingservice.domain.exceptions.DomainException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidCredentialsException;
 import com.pulsepass.onboardingservice.domain.exceptions.InvalidRefreshTokenException;
 import com.pulsepass.onboardingservice.domain.exceptions.SessionException;
 import com.pulsepass.onboardingservice.domain.exceptions.UserCreationException;
+import com.pulsepass.onboardingservice.domain.exceptions.UserDeactivationException;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.IdentityProviderGateway;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.CreateUserInputDTO;
+import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeactivateUserInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.DeleteSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.RefreshSessionInputDTO;
 import com.pulsepass.onboardingservice.domain.gateways.identityprovider.dtos.SessionOutputDTO;
@@ -16,13 +19,17 @@ import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.dtos.Key
 import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.dtos.KeycloakRoleMappingRequest;
 import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.dtos.KeycloakRoleResponse;
 import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.dtos.KeycloakTokenResponse;
+import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.dtos.KeycloakUpdateUserRequest;
+import com.pulsepass.onboardingservice.infrastructure.gateways.keycloak.dtos.KeycloakUserResponse;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -59,7 +66,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
         this.clientSecret = clientSecret;
     }
 
-    private String fetchAccessToken(String personKey) {
+    private String fetchAccessToken(String personKey, Supplier<DomainException> failure) {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type", "client_credentials");
         form.add("client_id", this.clientId);
@@ -79,7 +86,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     Map.of("person_key", personKey),
                     ex
             );
-            throw new UserCreationException();
+            throw failure.get();
         }
 
         if (response == null) {
@@ -87,7 +94,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     "KeycloakIdentityProviderGateway.fetchAccessToken - Token response without body {}",
                     Map.of("person_key", personKey)
             );
-            throw new UserCreationException();
+            throw failure.get();
         }
 
         return response.accessToken();
@@ -144,7 +151,7 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                 List.of(new KeycloakCredentialRequest("password", input.password(), false))
         );
 
-        String accessToken = fetchAccessToken(input.personKey());
+        String accessToken = fetchAccessToken(input.personKey(), UserCreationException::new);
         List<KeycloakRoleMappingRequest> roles = input.roles().stream()
                 .map(role -> fetchRole(accessToken, role))
                 .toList();
@@ -346,6 +353,103 @@ public class KeycloakIdentityProviderGateway implements IdentityProviderGateway 
                     Map.of("status", response.getStatusCode().value())
             );
             throw new SessionException();
+        }
+    }
+
+    @Override
+    public void deactivateUser(DeactivateUserInputDTO input) {
+        logger.info(
+                "KeycloakIdentityProviderGateway.deactivateUser - Deactivating user {}",
+                Map.of("person_key", input.personKey())
+        );
+
+        String accessToken = fetchAccessToken(input.personKey(), UserDeactivationException::new);
+
+        ResponseEntity<List<KeycloakUserResponse>> lookupResponse;
+        try {
+            lookupResponse = restClient.get()
+                    .uri("/admin/realms/{realm}/users?username={username}&exact=true", this.realm, input.username())
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, (request, errorResponse) -> {})
+                    .toEntity(new ParameterizedTypeReference<List<KeycloakUserResponse>>() {});
+        } catch (RestClientException ex) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.deactivateUser - User lookup request failed {}",
+                    Map.of("person_key", input.personKey()),
+                    ex
+            );
+            throw new UserDeactivationException();
+        }
+
+        if (lookupResponse.getStatusCode() != HttpStatus.OK) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.deactivateUser - Unexpected status on user lookup {}",
+                    Map.of("person_key", input.personKey(), "status", lookupResponse.getStatusCode().value())
+            );
+            throw new UserDeactivationException();
+        }
+
+        List<KeycloakUserResponse> users = lookupResponse.getBody();
+        if (users == null || users.isEmpty()) {
+            logger.warn(
+                    "KeycloakIdentityProviderGateway.deactivateUser - User not found in the identity provider {}",
+                    Map.of("person_key", input.personKey())
+            );
+            return;
+        }
+        String userId = users.get(0).id();
+
+        ResponseEntity<Void> updateResponse;
+        try {
+            updateResponse = restClient.put()
+                    .uri("/admin/realms/{realm}/users/{id}", this.realm, userId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new KeycloakUpdateUserRequest(false))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, (request, errorResponse) -> {})
+                    .toBodilessEntity();
+        } catch (RestClientException ex) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.deactivateUser - User update request failed {}",
+                    Map.of("person_key", input.personKey()),
+                    ex
+            );
+            throw new UserDeactivationException();
+        }
+
+        if (updateResponse.getStatusCode() != HttpStatus.NO_CONTENT) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.deactivateUser - Unexpected status on user update {}",
+                    Map.of("person_key", input.personKey(), "status", updateResponse.getStatusCode().value())
+            );
+            throw new UserDeactivationException();
+        }
+
+        ResponseEntity<Void> logoutResponse;
+        try {
+            logoutResponse = restClient.post()
+                    .uri("/admin/realms/{realm}/users/{id}/logout", this.realm, userId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, (request, errorResponse) -> {})
+                    .toBodilessEntity();
+        } catch (RestClientException ex) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.deactivateUser - User logout request failed {}",
+                    Map.of("person_key", input.personKey()),
+                    ex
+            );
+            throw new UserDeactivationException();
+        }
+
+        if (logoutResponse.getStatusCode() != HttpStatus.NO_CONTENT) {
+            logger.error(
+                    "KeycloakIdentityProviderGateway.deactivateUser - Unexpected status on user logout {}",
+                    Map.of("person_key", input.personKey(), "status", logoutResponse.getStatusCode().value())
+            );
+            throw new UserDeactivationException();
         }
     }
 }
